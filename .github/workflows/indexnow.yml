@@ -1,0 +1,30 @@
+name: IndexNow Submit
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # KST 23:00 (하루 1번, 그날 발행된 URL 모아서 제출)
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create Firebase service account
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > medicalkorea-2205a-firebase-adminsdk-fbsvc-70fd6e21f4.json
+
+      - name: Submit to IndexNow
+        run: node indexnow-submit.js
