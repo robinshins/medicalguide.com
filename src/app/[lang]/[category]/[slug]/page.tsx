@@ -116,7 +116,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
       position: i + 1,
       name: h.name,
       url: h.id ? `https://m.place.naver.com/place/${h.id}` : undefined,
-      image: ogImage,
+      image: `${baseUrl}/og/rank-${i + 1}.png`,
     })),
   });
 
