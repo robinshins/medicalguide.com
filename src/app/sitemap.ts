@@ -2,11 +2,10 @@ import type { MetadataRoute } from 'next';
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n';
 import { getAllArticleSlugs } from '@/lib/articles';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Regenerate every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalkoreaguide.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const entries: MetadataRoute.Sitemap = [];
 
   // Home pages for each language

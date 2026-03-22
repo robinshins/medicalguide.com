@@ -5,8 +5,8 @@ export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
 
 const INDEXNOW_KEY = '269f3ef87ad6a3c78368bdcd01094c82';
-const SITE_HOST = 'medicalkoreaguide.com';
-const SITE_URL = 'https://medicalkoreaguide.com';
+const SITE_HOST = 'www.medicalkoreaguide.com';
+const SITE_URL = 'https://www.medicalkoreaguide.com';
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');

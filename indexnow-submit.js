@@ -8,8 +8,8 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storage
 const db = admin.firestore();
 
 const INDEXNOW_KEY = '269f3ef87ad6a3c78368bdcd01094c82';
-const SITE_HOST = 'medicalkoreaguide.com';
-const SITE_URL = 'https://medicalkoreaguide.com';
+const SITE_HOST = 'www.medicalkoreaguide.com';
+const SITE_URL = 'https://www.medicalkoreaguide.com';
 
 async function main() {
   console.log('[IndexNow] Collecting URLs published in last 24 hours...');

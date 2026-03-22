@@ -13,7 +13,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreabeautyguide.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   let article: Awaited<ReturnType<typeof getArticle>> = null;
   try { article = await getArticle(lang, category, slug); } catch { /* */ }
   if (!article) return { title: 'Not Found' };
@@ -69,7 +69,7 @@ function stripEmojis(html: string): string {
 }
 
 function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>>, lang: string, category: string, slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreabeautyguide.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const pageUrl = `${baseUrl}/${lang}/${category}/${slug}`;
   const categoryName = '피부과';
   const ogImage = `${baseUrl}/og/og-derma.png`;
