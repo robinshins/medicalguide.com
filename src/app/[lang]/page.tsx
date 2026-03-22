@@ -6,6 +6,21 @@ import { getArticles } from '@/lib/articles';
 
 export const revalidate = 1800;
 
+const TREATMENTS = [
+  { slug: 'botox', ko: '보톡스', en: 'Botox', icon: '01' },
+  { slug: 'filler', ko: '필러', en: 'Filler', icon: '02' },
+  { slug: 'lifting', ko: '리프팅', en: 'Lifting', icon: '03' },
+  { slug: 'laser', ko: '레이저', en: 'Laser', icon: '04' },
+  { slug: 'acne', ko: '여드름', en: 'Acne', icon: '05' },
+  { slug: 'ulthera', ko: '울쎄라', en: 'Ulthera', icon: '06' },
+  { slug: 'thermage', ko: '써마지', en: 'Thermage', icon: '07' },
+  { slug: 'contouring', ko: '윤곽', en: 'Contouring', icon: '08' },
+  { slug: 'hair-removal', ko: '제모', en: 'Hair Removal', icon: '09' },
+  { slug: 'wrinkle', ko: '주름관리', en: 'Anti-Wrinkle', icon: '10' },
+  { slug: 'scar', ko: '흉터', en: 'Scar', icon: '11' },
+  { slug: 'pore', ko: '모공', en: 'Pore Care', icon: '12' },
+];
+
 export default async function HomePage({
   params,
 }: {
@@ -14,175 +29,219 @@ export default async function HomePage({
   const { lang } = await params;
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
+  const isKo = l === 'ko';
 
   let dermaArticles: Awaited<ReturnType<typeof getArticles>> = [];
   try {
-    dermaArticles = await getArticles(l, 'dermatology', 9);
+    dermaArticles = await getArticles(l, 'dermatology', 6);
   } catch {
     // Firestore may not be initialized yet
   }
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-rose-950 via-pink-950 to-fuchsia-950 text-white overflow-hidden">
-        {/* Decorative shapes */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 opacity-20">
-          <Image src="/img/shape-1.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 opacity-15">
-          <Image src="/img/shape-5.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 opacity-10">
-          <Image src="/img/shape-3.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
+      {/* Hero — centered, editorial style */}
+      <section className="relative bg-gradient-to-b from-rose-950 via-pink-950 to-rose-900 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        <div className="absolute top-10 left-10 w-72 h-72 bg-fuchsia-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl" />
 
-        <div className="relative max-w-6xl mx-auto px-4 py-20 md:py-28">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 mb-6 text-sm font-medium text-pink-200 border border-white/10">
-              <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" />
-              {t.trustBadge}
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-5 leading-[1.1] tracking-tight">
-              {t.siteTagline}
-            </h1>
-            <p className="text-lg text-pink-100/80 max-w-xl mb-10 leading-relaxed">
-              {t.siteDescription}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                href={`/${l}/dermatology`}
-                className="inline-flex items-center justify-center bg-white text-rose-900 px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-pink-50 transition-colors"
-              >
-                {t.dermatology}
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </Link>
-            </div>
+        <div className="relative max-w-4xl mx-auto px-4 py-24 md:py-32 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-8 text-sm font-medium text-pink-200 border border-white/10">
+            <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" />
+            {t.trustBadge}
+          </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.05] tracking-tight">
+            {isKo ? (
+              <>
+                <span className="text-pink-200">K-Beauty</span> 클리닉,{'\n'}
+                <br className="hidden md:block" />
+                데이터로 비교하세요
+              </>
+            ) : (
+              <>
+                Compare <span className="text-pink-200">K-Beauty</span>{'\n'}
+                <br className="hidden md:block" />
+                Clinics with Data
+              </>
+            )}
+          </h1>
+          <p className="text-lg md:text-xl text-pink-100/70 max-w-2xl mx-auto mb-10 leading-relaxed">
+            {t.siteDescription}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href={`/${l}/dermatology`}
+              className="inline-flex items-center justify-center bg-white text-rose-900 px-8 py-4 rounded-2xl font-semibold text-base hover:bg-pink-50 transition-all hover:scale-[1.02]"
+            >
+              {isKo ? '클리닉 찾아보기' : 'Browse Clinics'}
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </Link>
+            <Link
+              href={`/${l}/dermatology/pricing`}
+              className="inline-flex items-center justify-center bg-white/10 text-white px-8 py-4 rounded-2xl font-semibold text-base hover:bg-white/20 transition-all border border-white/10"
+            >
+              {isKo ? '시술 가격 가이드' : 'Price Guide'}
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Trust Section */}
+      {/* Stats counter bar */}
       <section className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <StatItem value="5,600+" label={isKo ? '분석 키워드' : 'Keywords Analyzed'} />
+            <StatItem value="13" label={isKo ? '지원 언어' : 'Languages'} />
+            <StatItem value="475" label={isKo ? '지역 커버리지' : 'Regions Covered'} />
+            <StatItem value="3" label={isKo ? '데이터 소스' : 'Data Sources'} />
+          </div>
+        </div>
+      </section>
+
+      {/* Treatment Categories */}
+      <section className="bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 py-16">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              {l === 'ko' ? '실제 리뷰 데이터로 비교하는 뷰티 클리닉' : 'Compare Beauty Clinics with Real Review Data'}
+              {isKo ? '시술별 클리닉 비교' : 'Compare Clinics by Treatment'}
             </h2>
-            <p className="text-gray-500 max-w-2xl mx-auto">
-              {l === 'ko'
-                ? '네이버, 카카오, 구글의 실제 방문자 리뷰와 평점 데이터를 수집하고 분석하여 가장 신뢰할 수 있는 클리닉 정보를 제공합니다.'
-                : 'We collect and analyze real visitor reviews and ratings from Naver, Kakao, and Google to provide the most reliable clinic information.'}
+            <p className="text-gray-500 max-w-xl mx-auto">
+              {isKo
+                ? '관심 있는 시술을 선택하면 해당 분야 전문 클리닉을 지역별로 비교할 수 있습니다.'
+                : 'Select a treatment to compare specialized clinics by region.'}
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <TrustCard
-              image="/img/shape-4.png"
-              title={l === 'ko' ? '실제 방문자 리뷰 분석' : 'Real Visitor Review Analysis'}
-              description={l === 'ko'
-                ? '네이버 플레이스와 카카오맵의 실제 방문자 리뷰를 수집하고 분석하여 가장 신뢰할 수 있는 클리닉 정보를 제공합니다.'
-                : 'We collect and analyze real visitor reviews from Naver Place and KakaoMap to provide the most reliable clinic information.'}
-            />
-            <TrustCard
-              image="/img/shape-6.png"
-              title={l === 'ko' ? '시술별 전문 클리닉 비교' : 'Treatment-Specific Clinic Comparison'}
-              description={l === 'ko'
-                ? '보톡스, 필러, 리프팅, 레이저 등 시술별로 전문 클리닉을 비교하여 최적의 선택을 도와드립니다.'
-                : 'Compare specialized clinics by treatment type — Botox, fillers, lifting, laser, and more — to help you make the best choice.'}
-            />
-            <TrustCard
-              image="/img/shape-7.png"
-              title={l === 'ko' ? '종합 평점 및 접근성 분석' : 'Comprehensive Rating & Access Analysis'}
-              description={l === 'ko'
-                ? '리뷰, 평점, 전문의 정보, 시설, 접근성을 종합적으로 분석하여 최적의 클리닉을 추천합니다.'
-                : 'We comprehensively analyze reviews, ratings, specialist info, facilities, and accessibility to recommend the best clinics.'}
-            />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {TREATMENTS.map(tr => (
+              <Link
+                key={tr.slug}
+                href={`/${l}/dermatology`}
+                className="group bg-white rounded-2xl p-4 border border-gray-100 hover:border-rose-300 hover:shadow-md transition-all text-center"
+              >
+                <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-rose-100 to-pink-50 flex items-center justify-center text-rose-600 text-xs font-bold group-hover:from-rose-200 group-hover:to-pink-100 transition-colors">
+                  {tr.icon}
+                </div>
+                <span className="text-sm font-semibold text-gray-800 group-hover:text-rose-600 transition-colors">
+                  {isKo ? tr.ko : tr.en}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Process Section */}
-      <section className="bg-rose-50/50">
+      {/* How it works — horizontal timeline style */}
+      <section className="bg-white">
         <div className="max-w-6xl mx-auto px-4 py-16">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-12">
-            {l === 'ko' ? '클리닉 선정 프로세스' : 'Our Clinic Selection Process'}
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-4">
+            {isKo ? '어떻게 분석하나요?' : 'How We Analyze'}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-            <StepCard
-              step="01"
-              title={l === 'ko' ? '리뷰 데이터 수집' : 'Review Data Collection'}
-              description={l === 'ko'
-                ? '네이버 플레이스, 카카오맵에서 실제 방문자 리뷰와 평점을 수집합니다.'
-                : 'Collect real visitor reviews and ratings from Naver Place and KakaoMap.'}
-            />
-            <StepCard
-              step="02"
-              title={l === 'ko' ? '전문의 정보 확인' : 'Specialist Verification'}
-              description={l === 'ko'
-                ? '건강보험심사평가원 데이터로 전문의 수, 진료과목, 시설 정보를 확인합니다.'
-                : 'Verify specialist count, departments, and facilities through official HIRA data.'}
-            />
-            <StepCard
-              step="03"
-              title={l === 'ko' ? '종합 분석' : 'Comprehensive Analysis'}
-              description={l === 'ko'
-                ? '수집된 데이터를 종합적으로 분석하여 시술별 최고의 클리닉을 선별합니다.'
-                : 'Comprehensively analyze all data to select the best clinics for each treatment.'}
-            />
-            <StepCard
-              step="04"
-              title={l === 'ko' ? '상세 비교 리뷰' : 'Detailed Comparison'}
-              description={l === 'ko'
-                ? '각 클리닉의 장단점, 실제 후기, 실용 정보를 상세하게 정리하여 제공합니다.'
-                : 'Provide detailed pros/cons, real reviews, and practical info for each clinic.'}
-            />
+          <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">
+            {isKo
+              ? '네이버, 카카오, 구글 3개 플랫폼의 실제 리뷰 데이터를 수집하고 AI가 종합 분석합니다.'
+              : 'We collect real review data from 3 platforms and analyze with AI.'}
+          </p>
+          <div className="relative">
+            {/* Connection line */}
+            <div className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-rose-200 via-pink-300 to-rose-200" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <TimelineStep
+                num="1"
+                title={isKo ? '리뷰 수집' : 'Collect'}
+                desc={isKo ? '네이버 플레이스, 카카오맵에서 실제 방문 리뷰를 크롤링합니다.' : 'Crawl real visitor reviews from Naver Place & KakaoMap.'}
+              />
+              <TimelineStep
+                num="2"
+                title={isKo ? '크로스 매칭' : 'Match'}
+                desc={isKo ? 'AI가 네이버·카카오·구글의 동일 클리닉을 자동 매칭합니다.' : 'AI auto-matches the same clinic across Naver, Kakao, Google.'}
+              />
+              <TimelineStep
+                num="3"
+                title={isKo ? 'AI 분석' : 'Analyze'}
+                desc={isKo ? '리뷰, 평점, 전문의, 시설 정보를 종합 분석하여 순위를 매깁니다.' : 'Comprehensively analyze reviews, ratings, specialists, facilities.'}
+              />
+              <TimelineStep
+                num="4"
+                title={isKo ? '다국어 발행' : 'Publish'}
+                desc={isKo ? '한국어 원문을 작성하고 12개 언어로 자동 번역하여 발행합니다.' : 'Write Korean original and auto-translate to 12 languages.'}
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Latest Articles */}
+      {/* Latest Articles — magazine grid */}
       {dermaArticles.length > 0 && (
-        <section className="bg-white">
+        <section className="bg-gray-50">
           <div className="max-w-6xl mx-auto px-4 py-16">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">{t.dermatology} &mdash; {t.latestArticles}</h2>
-              <Link href={`/${l}/dermatology`} className="text-rose-600 text-sm font-medium hover:underline">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <p className="text-rose-600 text-sm font-semibold mb-1">{t.latestArticles}</p>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isKo ? '최근 발행된 클리닉 가이드' : 'Recently Published Clinic Guides'}
+                </h2>
+              </div>
+              <Link href={`/${l}/dermatology`} className="text-rose-600 text-sm font-medium hover:underline hidden sm:block">
                 {t.viewAll} &rarr;
               </Link>
             </div>
+
+            {/* First article large, rest in grid */}
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {dermaArticles.map(article => (
+              {dermaArticles.slice(0, 1).map(article => (
+                <Link
+                  key={article.id}
+                  href={`/${l}/${article.category}/${article.slug}`}
+                  className="group md:col-span-2 lg:col-span-2 bg-gradient-to-br from-rose-900 to-pink-900 text-white rounded-2xl p-8 hover:shadow-xl transition-all relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-40 h-40 opacity-10">
+                    <Image src="/img/shape-1.png" alt="" width={200} height={200} className="w-full h-full object-contain" />
+                  </div>
+                  <div className="relative">
+                    <span className="text-pink-200/60 text-xs font-medium">{new Date(article.publishedAt).toLocaleDateString(LANG_CONFIG[l].htmlLang)}</span>
+                    <h3 className="text-xl md:text-2xl font-bold mt-2 mb-3 leading-snug group-hover:text-pink-100 transition-colors">
+                      {article.title}
+                    </h3>
+                    <p className="text-pink-100/60 text-sm line-clamp-3 mb-6 leading-relaxed max-w-lg">
+                      {article.metaDescription}
+                    </p>
+                    <span className="inline-flex items-center text-sm font-semibold text-pink-200 group-hover:translate-x-1 transition-transform">
+                      {t.readMore} <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+              {dermaArticles.slice(1).map(article => (
                 <ArticleCard key={article.id} article={article} lang={l} />
               ))}
             </div>
+
+            <Link href={`/${l}/dermatology`} className="mt-6 text-rose-600 text-sm font-medium hover:underline block text-center sm:hidden">
+              {t.viewAll} &rarr;
+            </Link>
           </div>
         </section>
       )}
 
-      {/* CTA Section */}
-      <section className="relative bg-gradient-to-br from-rose-950 via-pink-950 to-fuchsia-950 text-white overflow-hidden">
-        <div className="absolute top-0 right-0 w-56 h-56 opacity-15">
-          <Image src="/img/shape-2.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="absolute bottom-0 left-0 w-40 h-40 opacity-10">
-          <Image src="/img/shape-8.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-4 py-16 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            {l === 'ko'
-              ? '나에게 맞는 뷰티 클리닉을 찾아보세요'
-              : 'Find the Perfect Beauty Clinic for You'}
+      {/* CTA — clean, minimal */}
+      <section className="bg-white">
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            {isKo
+              ? '나에게 맞는 클리닉, 지금 찾아보세요'
+              : 'Find Your Perfect Clinic Today'}
           </h2>
-          <p className="text-pink-100/70 mb-8 max-w-xl mx-auto">
-            {l === 'ko'
-              ? '매일 새로운 클리닉 리뷰가 업데이트됩니다. 네이버, 카카오 실제 리뷰 데이터를 기반으로 한 가장 신뢰할 수 있는 뷰티 클리닉 가이드입니다.'
-              : 'New clinic reviews updated daily. The most trustworthy beauty clinic guide based on real Naver & Kakao review data.'}
+          <p className="text-gray-500 mb-8 max-w-xl mx-auto">
+            {isKo
+              ? '매일 새로운 리뷰 데이터가 업데이트됩니다. 보톡스부터 리프팅까지, 시술별 최고의 클리닉을 비교하세요.'
+              : 'New review data updated daily. Compare the best clinics for every treatment, from Botox to lifting.'}
           </p>
           <Link
             href={`/${l}/dermatology`}
-            className="inline-flex items-center bg-white text-rose-900 px-7 py-3.5 rounded-xl font-semibold hover:bg-pink-50 transition-colors"
+            className="inline-flex items-center bg-rose-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-rose-700 transition-all hover:scale-[1.02]"
           >
-            {t.dermatology}
+            {isKo ? '클리닉 비교하기' : 'Compare Clinics'}
             <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </Link>
         </div>
@@ -191,26 +250,23 @@ export default async function HomePage({
   );
 }
 
-function TrustCard({ image, title, description }: { image: string; title: string; description: string }) {
+function StatItem({ value, label }: { value: string; label: string }) {
   return (
-    <div className="bg-rose-50/50 rounded-2xl p-6 border border-rose-100 hover:border-rose-200 transition-colors">
-      <div className="w-16 h-16 mb-5 relative">
-        <Image src={image} alt="" width={64} height={64} className="w-full h-full object-contain" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
+    <div>
+      <div className="text-2xl md:text-3xl font-bold text-rose-600">{value}</div>
+      <div className="text-xs text-gray-500 mt-1">{label}</div>
     </div>
   );
 }
 
-function StepCard({ step, title, description }: { step: string; title: string; description: string }) {
+function TimelineStep({ num, title, desc }: { num: string; title: string; desc: string }) {
   return (
-    <div className="bg-white rounded-2xl p-6 border border-rose-100">
-      <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-rose-600 text-white text-sm font-bold mb-4">
-        {step}
+    <div className="text-center relative">
+      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-rose-200/50 relative z-10">
+        {num}
       </div>
-      <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
+      <h3 className="font-semibold text-gray-900 mb-1.5">{title}</h3>
+      <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
     </div>
   );
 }
@@ -222,16 +278,16 @@ function ArticleCard({ article, lang }: { article: { id: string; slug: string; c
       href={`/${lang}/${article.category}/${article.slug}`}
       className="group bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-rose-200 transition-all"
     >
-      <h3 className="font-semibold text-gray-900 group-hover:text-rose-600 mb-2 line-clamp-2 transition-colors">
+      <span className="text-xs text-gray-400">{new Date(article.publishedAt).toLocaleDateString(LANG_CONFIG[lang].htmlLang)}</span>
+      <h3 className="font-semibold text-gray-900 group-hover:text-rose-600 mt-1.5 mb-2 line-clamp-2 transition-colors">
         {article.title}
       </h3>
-      <p className="text-sm text-gray-500 line-clamp-3 mb-4 leading-relaxed">
+      <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
         {article.metaDescription}
       </p>
-      <div className="flex items-center justify-between text-xs text-gray-400">
-        <span>{new Date(article.publishedAt).toLocaleDateString(LANG_CONFIG[lang].htmlLang)}</span>
-        <span className="text-rose-600 font-medium group-hover:translate-x-0.5 transition-transform">{t.readMore} &rarr;</span>
-      </div>
+      <span className="text-rose-600 text-sm font-medium group-hover:translate-x-0.5 transition-transform inline-flex items-center">
+        {t.readMore} <svg className="ml-1 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+      </span>
     </Link>
   );
 }

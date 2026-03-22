@@ -194,34 +194,31 @@ export default async function ArticlePage({ params }: PageProps) {
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
       ))}
 
-      {/* Header */}
-      <div className="relative bg-gradient-to-br from-rose-950 via-pink-950 to-fuchsia-950 text-white overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 opacity-15">
-          <Image src="/img/shape-5.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="absolute bottom-0 left-10 w-32 h-32 opacity-10">
-          <Image src="/img/shape-12.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-4 py-12">
-          <nav className="text-sm text-pink-200/70 mb-5 flex items-center gap-2">
-            <Link href={`/${l}`} className="hover:text-white transition-colors">{t.backToHome}</Link>
-            <span className="text-pink-300/30">/</span>
-            <Link href={`/${l}/${category}`} className="hover:text-white transition-colors">
+      {/* Header — clean, minimal with accent line */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 pt-8 pb-10">
+          <nav className="text-sm text-gray-400 mb-6 flex items-center gap-2">
+            <Link href={`/${l}`} className="hover:text-rose-600 transition-colors">{t.backToHome}</Link>
+            <span className="text-gray-300">&rsaquo;</span>
+            <Link href={`/${l}/${category}`} className="hover:text-rose-600 transition-colors">
               {t.dermatology}
             </Link>
-            <span className="text-pink-300/30">/</span>
-            <span className="text-white">{article.region}</span>
+            <span className="text-gray-300">&rsaquo;</span>
+            <span className="text-gray-600">{article.region}</span>
           </nav>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 tracking-tight">{article.title}</h1>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <time dateTime={article.publishedAt} className="text-pink-200/70">{publishDate}</time>
-            <span className="bg-white/10 text-pink-200 px-3 py-1 rounded-full text-xs font-medium border border-white/10">
-              {t.trustBadge}
-            </span>
-            <span className="text-pink-200/50 text-xs">
-              {l === 'ko' ? '뷰티 전문 에디터 감수' : 'Reviewed by Beauty Editor'}
-            </span>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1 h-12 rounded-full bg-gradient-to-b from-rose-500 to-pink-400" />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-medium text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{t.trustBadge}</span>
+                <time dateTime={article.publishedAt} className="text-xs text-gray-400">{publishDate}</time>
+              </div>
+              <span className="text-xs text-gray-400">
+                {l === 'ko' ? '뷰티 전문 에디터 감수' : 'Reviewed by Beauty Editor'}
+              </span>
+            </div>
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-gray-900">{article.title}</h1>
         </div>
       </div>
 
@@ -232,15 +229,12 @@ export default async function ArticlePage({ params }: PageProps) {
         {/* Hospital cards */}
         {article.hospitals && article.hospitals.length > 0 && (
           <section className="mt-14">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 relative shrink-0">
-                <Image src="/img/shape-9.png" alt="" width={64} height={64} className="w-full h-full object-contain" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{t.topHospitals}</h2>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">{t.topHospitals}</h2>
+              <p className="text-sm text-gray-500">
+                {l === 'ko' ? '네이버 플레이스, 카카오맵, 구글맵 데이터 기준' : 'Based on Naver Place, KakaoMap, and Google Maps data'}
+              </p>
             </div>
-            <p className="text-sm text-gray-500 mb-6 ml-[52px]">
-              {l === 'ko' ? '네이버 플레이스, 카카오맵, 구글맵 데이터 기준' : 'Based on Naver Place, KakaoMap, and Google Maps data'}
-            </p>
             <div className="grid gap-4">
               {article.hospitals.map((hospital: HospitalInfo, i: number) => (
                 <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-rose-200 transition-all">
