@@ -13,29 +13,29 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalguide.co.kr';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreabeautyguide.com';
   let article: Awaited<ReturnType<typeof getArticle>> = null;
   try { article = await getArticle(lang, category, slug); } catch { /* */ }
   if (!article) return { title: 'Not Found' };
   const langConfig = LANG_CONFIG[lang as SupportedLang] || LANG_CONFIG.ko;
   const canonicalUrl = `${baseUrl}/${lang}/${category}/${slug}`;
-  const ogImage = `${baseUrl}/og/${category === 'dental' ? 'og-dental.png' : 'og-derma.png'}`;
-  const categoryKo = category === 'dental' ? '치과' : '피부과';
+  const ogImage = `${baseUrl}/og/og-derma.png`;
+  const categoryKo = '피부과';
   const hospitalCount = article.hospitals?.length || 0;
 
   return {
     title: article.title,
     description: article.metaDescription,
-    keywords: `${article.region} ${categoryKo}, ${article.region} ${categoryKo} 추천, ${article.keyword}, ${article.region} ${categoryKo} 잘하는곳, ${article.region} ${categoryKo} 후기`,
-    authors: [{ name: 'Medical Korea Guide', url: baseUrl }],
+    keywords: `${article.region} ${categoryKo}, ${article.region} ${categoryKo} 추천, ${article.keyword}, ${article.region} 뷰티클리닉, ${article.region} ${categoryKo} 후기`,
+    authors: [{ name: 'Korea Beauty Guide', url: baseUrl }],
     robots: { index: true, follow: true },
     openGraph: {
-      title: `${article.title} | Medical Korea Guide`,
+      title: `${article.title} | Korea Beauty Guide`,
       description: article.metaDescription,
       type: 'article',
       locale: langConfig.htmlLang,
       publishedTime: article.publishedAt,
-      siteName: 'Medical Korea Guide',
+      siteName: 'Korea Beauty Guide',
       url: canonicalUrl,
       images: [{ url: ogImage, width: 1200, height: 630, alt: article.title }],
     },
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: article.title,
       description: article.metaDescription,
       images: [ogImage],
-      site: '@MedicalKoreaGuide',
+      site: '@KoreaBeautyGuide',
     },
     alternates: {
       canonical: canonicalUrl,
@@ -53,9 +53,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ),
     },
     other: {
-      'article:author': 'Medical Korea Guide',
+      'article:author': 'Korea Beauty Guide',
       'article:section': categoryKo,
-      'article:tag': `${article.region},${categoryKo},${article.specialty || ''},병원추천,리뷰`,
+      'article:tag': `${article.region},${categoryKo},${article.specialty || ''},뷰티클리닉,리뷰`,
       'hospital:count': String(hospitalCount),
     },
   };
@@ -69,10 +69,10 @@ function stripEmojis(html: string): string {
 }
 
 function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>>, lang: string, category: string, slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalguide.co.kr';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://koreabeautyguide.com';
   const pageUrl = `${baseUrl}/${lang}/${category}/${slug}`;
-  const categoryName = category === 'dental' ? '치과' : '피부과';
-  const ogImage = `${baseUrl}/og/${category === 'dental' ? 'og-dental.png' : 'og-derma.png'}`;
+  const categoryName = '피부과';
+  const ogImage = `${baseUrl}/og/og-derma.png`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const schemas: any[] = [];
@@ -85,25 +85,25 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     description: article.metaDescription,
     datePublished: article.publishedAt,
     dateModified: article.publishedAt,
-    author: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl },
-    publisher: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl, logo: { '@type': 'ImageObject', url: `${baseUrl}/icon-192.png` } },
+    author: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl },
+    publisher: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl, logo: { '@type': 'ImageObject', url: `${baseUrl}/img/shape-16.png` } },
     mainEntityOfPage: pageUrl,
     inLanguage: lang,
     image: ogImage,
   });
 
-  // 2. BreadcrumbList (나만의닥터 패턴)
+  // 2. BreadcrumbList
   schemas.push({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, item: { '@id': baseUrl, name: 'Medical Korea Guide' } },
+      { '@type': 'ListItem', position: 1, item: { '@id': baseUrl, name: 'Korea Beauty Guide' } },
       { '@type': 'ListItem', position: 2, item: { '@id': `${baseUrl}/${lang}/${category}`, name: categoryName } },
       { '@type': 'ListItem', position: 3, item: { '@id': pageUrl, name: `${article.region} ${categoryName}` } },
     ],
   });
 
-  // 3. ItemList with proper ListItem wrapping
+  // 3. ItemList
   const hospitals = article.hospitals || [];
   schemas.push({
     '@context': 'https://schema.org',
@@ -120,7 +120,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     })),
   });
 
-  // 4. LocalBusiness per hospital (나만의닥터 패턴 — 각 병원 개별 스키마)
+  // 4. LocalBusiness per hospital
   hospitals.forEach((h: HospitalInfo) => {
     const addressParts = (h.address || '').split(' ');
     const region = addressParts[0] || '';
@@ -129,7 +129,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
 
     schemas.push({
       '@context': 'https://schema.org',
-      '@type': category === 'dental' ? 'Dentist' : 'MedicalClinic',
+      '@type': 'MedicalClinic',
       name: h.name,
       url: h.id ? `https://m.place.naver.com/place/${h.id}` : (h.homepage || undefined),
       telephone: h.phone || undefined,
@@ -195,7 +195,7 @@ export default async function ArticlePage({ params }: PageProps) {
       ))}
 
       {/* Header */}
-      <div className="relative bg-gray-950 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-br from-rose-950 via-pink-950 to-fuchsia-950 text-white overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 opacity-15">
           <Image src="/img/shape-5.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
         </div>
@@ -203,23 +203,23 @@ export default async function ArticlePage({ params }: PageProps) {
           <Image src="/img/shape-12.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 py-12">
-          <nav className="text-sm text-gray-300 mb-5 flex items-center gap-2">
+          <nav className="text-sm text-pink-200/70 mb-5 flex items-center gap-2">
             <Link href={`/${l}`} className="hover:text-white transition-colors">{t.backToHome}</Link>
-            <span className="text-gray-500">/</span>
+            <span className="text-pink-300/30">/</span>
             <Link href={`/${l}/${category}`} className="hover:text-white transition-colors">
-              {category === 'dental' ? t.dental : t.dermatology}
+              {t.dermatology}
             </Link>
-            <span className="text-gray-500">/</span>
+            <span className="text-pink-300/30">/</span>
             <span className="text-white">{article.region}</span>
           </nav>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 tracking-tight">{article.title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <time dateTime={article.publishedAt} className="text-gray-300">{publishDate}</time>
-            <span className="bg-white/10 text-blue-300 px-3 py-1 rounded-full text-xs font-medium border border-white/10">
+            <time dateTime={article.publishedAt} className="text-pink-200/70">{publishDate}</time>
+            <span className="bg-white/10 text-pink-200 px-3 py-1 rounded-full text-xs font-medium border border-white/10">
               {t.trustBadge}
             </span>
-            <span className="text-gray-400 text-xs">
-              {l === 'ko' ? '의료정보 전문 에디터 감수' : 'Reviewed by Medical Information Editor'}
+            <span className="text-pink-200/50 text-xs">
+              {l === 'ko' ? '뷰티 전문 에디터 감수' : 'Reviewed by Beauty Editor'}
             </span>
           </div>
         </div>
@@ -243,7 +243,7 @@ export default async function ArticlePage({ params }: PageProps) {
             </p>
             <div className="grid gap-4">
               {article.hospitals.map((hospital: HospitalInfo, i: number) => (
-                <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition-all">
+                <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-rose-200 transition-all">
                   {/* Hospital image */}
                   {hospital.imageUrls && hospital.imageUrls.length > 0 && (
                     <div className="mb-4 rounded-xl overflow-hidden bg-gray-100">
@@ -255,7 +255,7 @@ export default async function ArticlePage({ params }: PageProps) {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1.5">
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gray-950 text-white text-xs font-bold shrink-0">{i + 1}</span>
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-rose-600 text-white text-xs font-bold shrink-0">{i + 1}</span>
                         <h3 className="font-bold text-lg text-gray-900">{hospital.name}</h3>
                       </div>
                       <p className="text-sm text-gray-500 ml-10">{hospital.address}</p>
@@ -293,7 +293,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
                   {/* Specialist info */}
                   {hospital.specialistsInfo && (
-                    <div className="mt-3 ml-10 text-xs text-blue-700 bg-blue-50 rounded-lg px-3 py-2 inline-block font-medium">
+                    <div className="mt-3 ml-10 text-xs text-rose-700 bg-rose-50 rounded-lg px-3 py-2 inline-block font-medium">
                       {hospital.specialistsInfo}
                     </div>
                   )}
@@ -340,7 +340,7 @@ export default async function ArticlePage({ params }: PageProps) {
         )}
 
         {/* Data source */}
-        <div className="mt-14 bg-gray-50 rounded-2xl p-6 border border-gray-100 flex gap-4">
+        <div className="mt-14 bg-rose-50/50 rounded-2xl p-6 border border-rose-100 flex gap-4">
           <div className="w-12 h-12 shrink-0 relative">
             <Image src="/img/shape-18.png" alt="" width={64} height={64} className="w-full h-full object-contain" />
           </div>
@@ -348,8 +348,8 @@ export default async function ArticlePage({ params }: PageProps) {
             <h3 className="text-sm font-semibold text-gray-900 mb-1.5">{t.dataSource}</h3>
             <p className="text-xs text-gray-600 leading-relaxed">
               {l === 'ko'
-                ? '본 글의 병원 정보, 리뷰, 전문의 정보는 네이버 플레이스, 카카오맵, 구글맵, 건강보험심사평가원의 공개 데이터를 기반으로 작성되었습니다. 실제 방문 전 해당 병원에 직접 확인하시기 바랍니다.'
-                : 'Hospital information, reviews, and specialist data in this article are based on publicly available data from Naver Place, KakaoMap, Google Maps, and HIRA. Please verify directly with the clinic before visiting.'}
+                ? '본 글의 클리닉 정보, 리뷰, 전문의 정보는 네이버 플레이스, 카카오맵, 구글맵, 건강보험심사평가원의 공개 데이터를 기반으로 작성되었습니다. 실제 방문 전 해당 클리닉에 직접 확인하시기 바랍니다.'
+                : 'Clinic information, reviews, and specialist data in this article are based on publicly available data from Naver Place, KakaoMap, Google Maps, and HIRA. Please verify directly with the clinic before visiting.'}
             </p>
           </div>
         </div>
@@ -357,24 +357,24 @@ export default async function ArticlePage({ params }: PageProps) {
         {/* Pricing guide link */}
         <Link
           href={`/${l}/${category}/pricing`}
-          className="mt-8 flex items-center justify-between bg-gray-950 text-white rounded-2xl p-6 hover:bg-gray-900 transition-colors group"
+          className="mt-8 flex items-center justify-between bg-gradient-to-r from-rose-900 to-pink-900 text-white rounded-2xl p-6 hover:from-rose-800 hover:to-pink-800 transition-colors group"
         >
           <div>
-            <p className="text-xs text-gray-400 mb-1">
+            <p className="text-xs text-pink-200/60 mb-1">
               {l === 'ko' ? '참고 가이드' : 'Reference Guide'}
             </p>
             <p className="font-bold text-lg">
               {l === 'ko'
-                ? `한국 ${category === 'dental' ? '치과' : '피부과'} 시술 평균 가격 가이드`
-                : `Korea ${category === 'dental' ? 'Dental' : 'Dermatology'} Treatment Price Guide`}
+                ? '한국 피부과 시술 평균 가격 가이드'
+                : 'Korea Dermatology Treatment Price Guide'}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-pink-200/60 mt-1">
               {l === 'ko'
-                ? '건강보험심사평가원 공식 데이터 기반 시술별 평균 가격 비교'
-                : 'Compare average prices by treatment based on official HIRA data'}
+                ? '보톡스, 필러, 리프팅, 레이저 등 시술별 평균 가격 비교'
+                : 'Compare average prices for Botox, fillers, lifting, laser, and more'}
             </p>
           </div>
-          <svg className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-pink-200/40 group-hover:translate-x-1 transition-transform shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
@@ -387,7 +387,7 @@ export default async function ArticlePage({ params }: PageProps) {
           {SUPPORTED_LANGUAGES.map(sl => (
             <Link key={sl} href={`/${sl}/${category}/${slug}`}
               className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                sl === l ? 'bg-gray-950 text-white border-gray-950' : 'border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                sl === l ? 'bg-rose-600 text-white border-rose-600' : 'border-gray-200 text-gray-500 hover:border-rose-300 hover:text-rose-600'
               }`}>
               {LANG_CONFIG[sl].nativeName}
             </Link>

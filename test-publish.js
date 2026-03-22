@@ -16,6 +16,31 @@ const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
 
+// --- Initialize keyword queue (dermatology only) ---
+async function initKeywordQueue() {
+  const { execSync } = require('child_process');
+  const output = execSync('npx tsx -e "const { generateAllKeywords } = require(\'./src/lib/keywords\'); console.log(JSON.stringify(generateAllKeywords()))"', { encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 });
+  const keywords = JSON.parse(output);
+  console.log(`Initializing ${keywords.length} keywords into keywords_beauty...`);
+  let count = 0;
+  const batchSize = 450;
+  let batch = db.batch();
+  for (const kw of keywords) {
+    const ref = db.collection('keywords_beauty').doc(kw.id);
+    batch.set(ref, kw);
+    count++;
+    if (count % batchSize === 0) {
+      await batch.commit();
+      batch = db.batch();
+      console.log(`  ...committed ${count}/${keywords.length}`);
+    }
+  }
+  if (count % batchSize !== 0) {
+    await batch.commit();
+  }
+  console.log(`Done: ${count} keywords initialized.`);
+}
+
 // --- GPT Matcher ---
 async function matchWithGPT(naverHospital, kakaoCandidates) {
   if (kakaoCandidates.length === 0) return { matchIndex: -1, confidence: 0, reason: 'No candidates' };
@@ -589,7 +614,7 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
     const fail = results.filter(r => r.status === 'rejected').length;
     console.log(`  Done: ${ok} ok, ${fail} failed (${((Date.now() - t6) / 1000).toFixed(1)}s)`);
 
-    await db.collection('keywords').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
+    await db.collection('keywords_beauty').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
     return koDoc;
   } catch (e) {
     await browser.close();
@@ -599,18 +624,37 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
 
 // --- Main ---
 async function main() {
-  const kw = {
-    id: 'dental-seoul',
-    keyword: '서울 치과',
-    region: '서울',
-    regionSlug: 'seoul',
-    specialty: '',
-    specialtySlug: 'general',
-    category: 'dental',
-    status: 'pending',
-    publishedAt: null,
-    order: 11,
-  };
+  // Query Firestore for next pending dermatology keyword
+  // Avoid composite index: query by status only, filter/sort in JS
+  console.log('Querying Firestore for next pending dermatology keyword...');
+  const snapshot = await db.collection('keywords_beauty')
+    .where('status', '==', 'pending')
+    .limit(100)
+    .get();
+
+  if (snapshot.empty) {
+    console.log('No pending keywords. Initializing keyword queue...');
+    await initKeywordQueue();
+    console.log('Queue initialized. Run again to publish.');
+    process.exit(0);
+  }
+
+  // Filter dermatology + sort by order in JS (avoid composite index)
+  const candidates = snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(d => d.category === 'dermatology')
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  if (candidates.length === 0) {
+    console.log('No pending dermatology keywords found.');
+    process.exit(0);
+  }
+
+  const kw = candidates[0];
+  console.log(`Found: "${kw.keyword}" (order: ${kw.order})\n`);
+
+  // Mark as in_progress
+  await db.collection('keywords_beauty').doc(kw.id).update({ status: 'in_progress' });
 
   console.log('Publishing 1 article (KO + 12 languages)...\n');
   const totalStart = Date.now();
@@ -622,14 +666,16 @@ async function main() {
       console.log(`\n${'='.repeat(60)}`);
       console.log(`SUCCESS`);
       console.log(`Title: ${result.title}`);
-      console.log(`URL: /ko/dental/${result.slug}`);
+      console.log(`URL: /ko/dermatology/${result.slug}`);
       console.log(`Total time: ${totalTime}s`);
       console.log(`${'='.repeat(60)}`);
     } else {
       console.log(`\nFailed: no hospitals found (${totalTime}s)`);
+      await db.collection('keywords_beauty').doc(kw.id).update({ status: 'failed' });
     }
   } catch (e) {
     console.error('\nError:', e.message);
+    await db.collection('keywords_beauty').doc(kw.id).update({ status: 'failed' });
   }
 
   process.exit(0);

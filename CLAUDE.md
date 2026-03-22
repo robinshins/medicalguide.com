@@ -15,27 +15,31 @@ No test framework is configured.
 
 ## Architecture
 
-Medical Korea Guide is an automated multilingual SEO content platform for Korean healthcare tourism. It generates hospital review articles by scraping real data, creating AI content, and publishing to Firestore.
+Korea Beauty Guide is an automated multilingual SEO content platform for Korean beauty/aesthetic clinics. It generates clinic review articles by scraping real data, creating AI content, and publishing to Firestore.
+
+**This project shares Firestore DB with the original Medical Korea Guide but operates independently** — publishing here does NOT affect the original project's publishing queue.
 
 ### Data Pipeline (server-side, `src/lib/`)
 
 ```
-keywords.ts (9,025 region × specialty combinations, ordered by population)
+keywords.ts (dermatology-only: 475 regions x 13 specialties, ordered by population)
     → scraper.ts (Puppeteer: Naver Place + KakaoMap + Google Maps)
-    → matcher.ts (GPT-5.4-mini: cross-platform hospital name/address matching)
+    → matcher.ts (GPT-5.4-mini: cross-platform clinic name/address matching)
     → generator.ts (Claude Sonnet: Korean article → GPT-5.4-mini: 12 language translations)
     → publish.ts (orchestrator: queue management + Firestore save)
 ```
 
-This pipeline runs via:
-- **GitHub Actions** (`.github/workflows/publish.yml`) — 24x daily at random intervals with 0-10min random delay
-- `/api/cron` (Vercel cron, 12x daily) — backup trigger
-- `/api/publish` (manual POST trigger)
-- `node test-publish.js` (local testing)
+### Category Focus
+
+- **Dermatology only** (no dental) — beauty/aesthetics clinics
+- Specialties: botox, filler, laser, acne, scar, pore, ulthera, thermage, contouring, lifting, wrinkle, hair-removal
+- URL category path: `dermatology` (matches Firestore schema)
 
 ### Frontend (Next.js 16 App Router)
 
-Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages × 2 categories (dental, dermatology). Article content is server-generated HTML rendered via `dangerouslySetInnerHTML` with styles in `.article-content` (globals.css).
+Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages. Article content is server-generated HTML rendered via `dangerouslySetInnerHTML` with styles in `.article-content` (globals.css).
+
+**Design theme**: Pink/rose beauty aesthetic (rose-950 gradients, rose-600 accents, pink highlights)
 
 ### Key Conventions
 
@@ -45,11 +49,13 @@ Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages × 2 ca
 - **Dynamic imports**: Puppeteer (`scraper.ts`) and Anthropic SDK (`generator.ts`) are dynamically imported in `publish.ts` to avoid bundling in page renders
 - **Firebase lazy init**: `firebase.ts` uses a Proxy so imports don't crash during build
 - **UI text**: Always use `UI_TRANSLATIONS[lang]` from `src/lib/i18n.ts` — never hardcode user-facing strings
-- **Article IDs**: Follow pattern `{category}-{slug}-{lang}` (e.g., `dental-gangnam-ko`)
+- **Article IDs**: Follow pattern `{category}-{slug}-{lang}` (e.g., `derma-gangnam-botox-ko`)
 - **ISR**: Category pages revalidate at 1800s, articles at 3600s
 - **Scraper delays**: 2-3s between requests to avoid rate limiting on Naver/Kakao
 - **Firestore queries**: Avoid composite indexes — sort in JavaScript instead
 - **No emojis**: Neither in UI code nor in Claude-generated article content
+- **Logo/favicon**: `/img/shape-16.png`
+- **Site name**: "Korea Beauty Guide" (all languages)
 
 ### Environment Variables
 

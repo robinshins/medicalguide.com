@@ -30,32 +30,32 @@ interface PricingData {
 
 export default function PricingPage({ data, lang, category }: { data: PricingData; lang: SupportedLang; category: 'dental' | 'dermatology' }) {
   const t = UI_TRANSLATIONS[lang];
-  const categoryName = category === 'dental' ? t.dental : t.dermatology;
+  const categoryName = category === 'dental' ? (lang === 'ko' ? '치과' : 'Dental') : t.dermatology;
 
   return (
     <div className="bg-white">
       {/* Header */}
-      <div className="relative bg-gray-950 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-br from-rose-950 via-pink-950 to-fuchsia-950 text-white overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 opacity-15">
           <Image src="/img/shape-5.png" alt="" width={400} height={400} className="w-full h-full object-contain" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 py-12">
-          <nav className="text-sm text-gray-300 mb-5 flex items-center gap-2">
+          <nav className="text-sm text-pink-200/70 mb-5 flex items-center gap-2">
             <Link href={`/${lang}`} className="hover:text-white transition-colors">{t.backToHome}</Link>
-            <span className="text-gray-500">/</span>
+            <span className="text-pink-300/30">/</span>
             <Link href={`/${lang}/${category}`} className="hover:text-white transition-colors">{categoryName}</Link>
-            <span className="text-gray-500">/</span>
+            <span className="text-pink-300/30">/</span>
             <span className="text-white">{lang === 'ko' ? '가격 가이드' : 'Price Guide'}</span>
           </nav>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 tracking-tight">
             {data.title}
           </h1>
-          <p className="text-gray-300 text-sm mb-3">{data.subtitle}</p>
+          <p className="text-pink-200/70 text-sm mb-3">{data.subtitle}</p>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="bg-white/10 text-blue-300 px-3 py-1 rounded-full text-xs font-medium border border-white/10">
+            <span className="bg-white/10 text-pink-200 px-3 py-1 rounded-full text-xs font-medium border border-white/10">
               {t.trustBadge}
             </span>
-            <span className="text-gray-400 text-xs">
+            <span className="text-pink-200/50 text-xs">
               {lang === 'ko' ? `최종 업데이트: ${data.lastUpdated}` : `Last updated: ${data.lastUpdated}`}
             </span>
           </div>
@@ -64,14 +64,14 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
 
       <div className="max-w-4xl mx-auto px-4 py-10">
         {/* Intro */}
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-10">
-          <p className="text-sm text-blue-900 leading-relaxed">{data.intro}</p>
+        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-10">
+          <p className="text-sm text-rose-900 leading-relaxed">{data.intro}</p>
         </div>
 
         {/* Sections */}
         {data.sections.map((section, si) => (
           <section key={si} className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 pb-3 border-b-2 border-gray-900 tracking-tight">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 pb-3 border-b-2 border-rose-600 tracking-tight">
               {si + 1}. {section.title}
             </h2>
             {section.description && (
@@ -79,10 +79,10 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
             )}
 
             {/* Price table */}
-            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto rounded-xl border border-rose-200 shadow-sm">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-950 text-white">
+                  <tr className="bg-gradient-to-r from-rose-900 to-pink-900 text-white">
                     <th className="text-left p-3.5 text-xs font-semibold uppercase tracking-wider">
                       {lang === 'ko' ? '시술 항목' : 'Treatment'}
                     </th>
@@ -99,7 +99,7 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
                 </thead>
                 <tbody>
                   {section.items.map((item, ii) => (
-                    <tr key={ii} className={`${ii % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                    <tr key={ii} className={`${ii % 2 === 0 ? 'bg-white' : 'bg-rose-50/50'} hover:bg-rose-50 transition-colors`}>
                       <td className="p-3.5 text-sm text-gray-900 font-medium">
                         {item.name}
                         {item.note && <span className="block text-xs text-gray-400 mt-0.5">{item.note}</span>}
@@ -131,13 +131,13 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
 
         {/* Price factors */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-900 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-rose-600 tracking-tight">
             {lang === 'ko' ? '가격에 영향을 미치는 주요 요소' : 'Key Factors Affecting Prices'}
           </h2>
           <div className="grid gap-3">
             {data.factors.map((factor, i) => (
-              <div key={i} className="flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-gray-950 text-white text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
+              <div key={i} className="flex items-start gap-3 bg-rose-50/50 rounded-xl p-4 border border-rose-100">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-rose-600 text-white text-xs font-bold shrink-0 mt-0.5">{i + 1}</span>
                 <p className="text-sm text-gray-700 leading-relaxed">{factor}</p>
               </div>
             ))}
@@ -145,7 +145,7 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
         </section>
 
         {/* Sources */}
-        <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-10">
+        <div className="bg-rose-50/50 rounded-2xl p-6 border border-rose-100 mb-10">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">{t.dataSource}</h3>
           <ul className="space-y-1.5">
             {data.sources.map((source, i) => (
@@ -167,7 +167,7 @@ export default function PricingPage({ data, lang, category }: { data: PricingDat
           {SUPPORTED_LANGUAGES.map(sl => (
             <Link key={sl} href={`/${sl}/${category}/pricing`}
               className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${
-                sl === lang ? 'bg-gray-950 text-white border-gray-950' : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                sl === lang ? 'bg-rose-600 text-white border-rose-600' : 'border-gray-200 text-gray-500 hover:border-rose-300 hover:text-rose-600'
               }`}>
               {LANG_CONFIG[sl].nativeName}
             </Link>

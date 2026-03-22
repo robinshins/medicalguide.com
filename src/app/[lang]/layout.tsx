@@ -4,7 +4,6 @@ import type { SupportedLang } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import LangDropdown from '@/app/components/LangDropdown';
 
 export async function generateStaticParams() {
   return SUPPORTED_LANGUAGES.map(lang => ({ lang }));
@@ -26,6 +25,10 @@ export async function generateMetadata({
       template: `%s | ${t.siteName}`,
     },
     description: t.siteDescription,
+    icons: {
+      icon: '/img/shape-16.png',
+      apple: '/img/shape-16.png',
+    },
     openGraph: {
       title: `${t.siteName} — ${t.siteTagline}`,
       description: t.siteDescription,
@@ -60,16 +63,13 @@ export default async function LangLayout({
         <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <Link href={`/${l}`} className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 p-0.5 flex items-center justify-center">
-                <Image src="/icon-192.png" alt="Medical Korea Guide" width={28} height={28} className="rounded-md" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-100 to-pink-200 p-0.5 flex items-center justify-center">
+                <Image src="/img/shape-16.png" alt="Korea Beauty Guide" width={28} height={28} className="rounded-md" />
               </div>
               <span className="text-base font-bold text-gray-900 tracking-tight">{t.siteName}</span>
             </Link>
             <nav className="flex items-center gap-5 text-sm">
-              <Link href={`/${l}/dental`} className="text-gray-500 hover:text-gray-900 font-medium transition-colors">
-                {t.dental}
-              </Link>
-              <Link href={`/${l}/dermatology`} className="text-gray-500 hover:text-gray-900 font-medium transition-colors">
+              <Link href={`/${l}/dermatology`} className="text-gray-500 hover:text-rose-600 font-medium transition-colors">
                 {t.dermatology}
               </Link>
               <div className="relative group">
@@ -82,7 +82,7 @@ export default async function LangLayout({
                       key={sl}
                       href={`/${sl}`}
                       className={`block px-3 py-1.5 text-xs transition-colors ${
-                        sl === l ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                        sl === l ? 'text-rose-600 bg-rose-50 font-medium' : 'text-gray-600 hover:bg-gray-50'
                       }`}
                     >
                       {LANG_CONFIG[sl].nativeName}
@@ -105,7 +105,7 @@ export default async function LangLayout({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div>
                 <div className="flex items-center gap-2.5 mb-3">
-                  <Image src="/icon-192.png" alt="Medical Korea Guide" width={24} height={24} className="rounded-md" />
+                  <Image src="/img/shape-16.png" alt="Korea Beauty Guide" width={24} height={24} className="rounded-md" />
                   <span className="text-sm font-bold text-white">{t.siteName}</span>
                 </div>
                 <p className="text-sm text-gray-500 leading-relaxed">{t.siteDescription}</p>
@@ -113,7 +113,6 @@ export default async function LangLayout({
               <div>
                 <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3">Categories</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href={`/${l}/dental`} className="hover:text-white transition-colors">{t.dental}</Link></li>
                   <li><Link href={`/${l}/dermatology`} className="hover:text-white transition-colors">{t.dermatology}</Link></li>
                 </ul>
               </div>
@@ -122,12 +121,12 @@ export default async function LangLayout({
                 <ul className="text-sm space-y-2 text-gray-500">
                   <li>Naver Place</li>
                   <li>KakaoMap</li>
-                  <li>HIRA (Health Insurance Review & Assessment Service)</li>
+                  <li>Google Maps</li>
                 </ul>
               </div>
             </div>
             <div className="mt-10 pt-6 border-t border-white/5 text-center text-xs text-gray-600">
-              &copy; {new Date().getFullYear()} Medical Korea Guide. Data sourced from public reviews and official health records.
+              &copy; {new Date().getFullYear()} Korea Beauty Guide. Data sourced from public reviews and official health records.
             </div>
           </div>
         </footer>

@@ -148,17 +148,8 @@ function toSlug(korean: string): string {
 interface SpecialtyDef {
   name: string;
   slug: string;
-  category: 'dental' | 'dermatology';
+  category: 'dermatology';
 }
-
-const DENTAL_SPECIALTIES: SpecialtyDef[] = [
-  { name: '', slug: '', category: 'dental' },
-  { name: '임플란트', slug: 'implant', category: 'dental' },
-  { name: '치아교정', slug: 'orthodontics', category: 'dental' },
-  { name: '전체임플란트', slug: 'full-implant', category: 'dental' },
-  { name: '사랑니발치', slug: 'wisdom-tooth', category: 'dental' },
-  { name: '충치치료', slug: 'cavity', category: 'dental' },
-];
 
 const DERMA_SPECIALTIES: SpecialtyDef[] = [
   { name: '', slug: '', category: 'dermatology' },
@@ -292,33 +283,7 @@ export function generateAllKeywords(): KeywordEntry[] {
   const entries: KeywordEntry[] = [];
   let order = 0;
 
-  // Dental first (as requested by user)
-  for (const region of regions) {
-    for (const specialty of DENTAL_SPECIALTIES) {
-      const categoryLabel = '치과';
-      const keyword = specialty.name
-        ? `${region.name} ${specialty.name} ${categoryLabel}`
-        : `${region.name} ${categoryLabel}`;
-      const slug = specialty.slug
-        ? `${region.slug}-${specialty.slug}`
-        : region.slug;
-
-      entries.push({
-        id: `dental-${slug}`,
-        keyword,
-        region: region.name,
-        regionSlug: region.slug,
-        specialty: specialty.name || '일반',
-        specialtySlug: specialty.slug || 'general',
-        category: 'dental',
-        status: 'pending',
-        publishedAt: null,
-        order: order++,
-      });
-    }
-  }
-
-  // Then dermatology
+  // Dermatology (beauty/aesthetics) only
   for (const region of regions) {
     for (const specialty of DERMA_SPECIALTIES) {
       const categoryLabel = '피부과';
@@ -351,6 +316,6 @@ export function getSearchQuery(entry: KeywordEntry): string {
   return entry.keyword;
 }
 
-export function getCategoryPath(category: 'dental' | 'dermatology'): string {
+export function getCategoryPath(category: string): string {
   return category;
 }

@@ -588,7 +588,7 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
     const fail = results.filter(r => r.status === 'rejected').length;
     console.log(`  Done: ${ok} ok, ${fail} failed (${((Date.now() - t6) / 1000).toFixed(1)}s)`);
 
-    await db.collection('keywords').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
+    await db.collection('keywords_beauty').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
     return koDoc;
   } catch (e) {
     await browser.close();
@@ -601,11 +601,10 @@ async function main() {
   console.log('[Action] Fetching next pending keyword from Firestore...');
   const totalStart = Date.now();
 
-  // Get next pending keyword ordered by 'order' field
-  const snap = await db.collection('keywords')
+  // Get next pending keyword (avoid composite index: sort in JS)
+  const snap = await db.collection('keywords_beauty')
     .where('status', '==', 'pending')
-    .orderBy('order', 'asc')
-    .limit(1)
+    .limit(100)
     .get();
 
   if (snap.empty) {
@@ -613,7 +612,10 @@ async function main() {
     process.exit(0);
   }
 
-  const kw = snap.docs[0].data();
+  const candidates = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const kw = candidates[0];
   console.log(`[Action] Next: "${kw.keyword}" (order: ${kw.order}, category: ${kw.category})`);
 
   // Random delay 0~10 minutes to avoid mechanical publish pattern
@@ -623,7 +625,7 @@ async function main() {
   console.log('[Action] Starting publish...\n');
 
   // Mark as in_progress
-  await db.collection('keywords').doc(kw.id).update({ status: 'in_progress' });
+  await db.collection('keywords_beauty').doc(kw.id).update({ status: 'in_progress' });
 
   try {
     const result = await publishOneArticle(kw);
@@ -638,11 +640,11 @@ async function main() {
     } else {
       console.log(`\nFailed: no hospitals found (${totalTime}s)`);
       // Mark as failed so we skip it next time
-      await db.collection('keywords').doc(kw.id).update({ status: 'failed' });
+      await db.collection('keywords_beauty').doc(kw.id).update({ status: 'failed' });
     }
   } catch (e) {
     console.error('\nError:', e.message);
-    await db.collection('keywords').doc(kw.id).update({ status: 'failed' });
+    await db.collection('keywords_beauty').doc(kw.id).update({ status: 'failed' });
     process.exit(1);
   }
 

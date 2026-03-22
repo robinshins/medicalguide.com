@@ -11,31 +11,28 @@ interface PageProps {
 export async function generateStaticParams() {
   const params: { lang: string; category: string }[] = [];
   for (const lang of SUPPORTED_LANGUAGES) {
-    params.push({ lang, category: 'dental' });
     params.push({ lang, category: 'dermatology' });
   }
   return params;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { lang, category } = await params;
+  const { lang } = await params;
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
-  const categoryName = category === 'dental' ? t.dental : t.dermatology;
 
   return {
-    title: `${categoryName} - ${t.siteName}`,
-    description: `${categoryName} ${t.siteDescription}`,
+    title: `${t.dermatology} - ${t.siteName}`,
+    description: t.siteDescription,
   };
 }
 
-export const revalidate = 1800; // 30 minutes
+export const revalidate = 1800;
 
 export default async function CategoryPage({ params }: PageProps) {
   const { lang, category } = await params;
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
-  const categoryName = category === 'dental' ? t.dental : t.dermatology;
 
   let articles: Awaited<ReturnType<typeof getArticles>> = [];
   try {
@@ -47,12 +44,12 @@ export default async function CategoryPage({ params }: PageProps) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <nav className="text-sm text-gray-500 mb-6">
-        <Link href={`/${l}`} className="hover:text-blue-700">{t.backToHome}</Link>
-        <span className="mx-2">›</span>
-        <span className="text-gray-900">{categoryName}</span>
+        <Link href={`/${l}`} className="hover:text-rose-600">{t.backToHome}</Link>
+        <span className="mx-2">&rsaquo;</span>
+        <span className="text-gray-900">{t.dermatology}</span>
       </nav>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{categoryName}</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.dermatology}</h1>
       <p className="text-gray-600 mb-8">{t.siteDescription}</p>
 
       {articles.length === 0 ? (
@@ -67,9 +64,9 @@ export default async function CategoryPage({ params }: PageProps) {
             <Link
               key={article.id}
               href={`/${l}/${category}/${article.slug}`}
-              className="border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-blue-200 transition-all group"
+              className="border border-gray-200 rounded-xl p-5 hover:shadow-md hover:border-rose-200 transition-all group"
             >
-              <h2 className="font-bold text-gray-900 group-hover:text-blue-700 mb-2 line-clamp-2">
+              <h2 className="font-bold text-gray-900 group-hover:text-rose-600 mb-2 line-clamp-2">
                 {article.title}
               </h2>
               <p className="text-sm text-gray-600 line-clamp-3 mb-3">
@@ -77,7 +74,7 @@ export default async function CategoryPage({ params }: PageProps) {
               </p>
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{new Date(article.publishedAt).toLocaleDateString(LANG_CONFIG[l].htmlLang)}</span>
-                <span className="text-blue-600 font-medium">{t.readMore} →</span>
+                <span className="text-rose-600 font-medium">{t.readMore} &rarr;</span>
               </div>
             </Link>
           ))}

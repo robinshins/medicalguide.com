@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import type { KeywordEntry, Article } from './types';
 
-const KEYWORDS_COLLECTION = 'keywords';
+const KEYWORDS_COLLECTION = 'keywords_beauty';
 const ARTICLES_COLLECTION = 'articles';
 
 // --- Initialize keyword queue in Firestore ---
@@ -34,14 +34,17 @@ export async function initializeKeywordQueue(): Promise<number> {
 
 // --- Get next pending keyword ---
 export async function getNextPendingKeyword(): Promise<KeywordEntry | null> {
+  // Avoid composite index: query by status only, sort in JS
   const snapshot = await db.collection(KEYWORDS_COLLECTION)
     .where('status', '==', 'pending')
-    .orderBy('order', 'asc')
-    .limit(1)
+    .limit(100)
     .get();
 
   if (snapshot.empty) return null;
-  return snapshot.docs[0].data() as KeywordEntry;
+  const candidates = snapshot.docs
+    .map(doc => doc.data() as KeywordEntry)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  return candidates[0];
 }
 
 // --- Publish a single article ---
