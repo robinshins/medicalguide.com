@@ -58,7 +58,7 @@ export default async function LangLayout({
   return (
     <html lang={config.htmlLang} dir={config.direction} className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-white text-gray-900">
-        <GoogleAnalytics gaId="G-VVC2XX5P0N" />
+        <GoogleAnalytics gaId="G-TY11HDD292" />
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
