@@ -7,9 +7,9 @@ const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'medicalk
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storageBucket: 'medicalkorea-2205a.firebasestorage.app' });
 const db = admin.firestore();
 
-const INDEXNOW_KEY = 'c3452bc6ba68afc0a9746c8a940551a6';
-const SITE_HOST = 'medicalguide.co.kr';
-const SITE_URL = 'https://medicalguide.co.kr';
+const INDEXNOW_KEY = '269f3ef87ad6a3c78368bdcd01094c82';
+const SITE_HOST = 'medicalkoreaguide.com';
+const SITE_URL = 'https://medicalkoreaguide.com';
 
 async function main() {
   console.log('[IndexNow] Collecting URLs published in last 24 hours...');

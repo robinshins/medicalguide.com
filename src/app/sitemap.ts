@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Regenerate every hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalguide.co.kr';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalkoreaguide.com';
   const entries: MetadataRoute.Sitemap = [];
 
   // Home pages for each language
@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // Category pages
-    for (const category of ['dental', 'dermatology']) {
+    for (const category of ['dermatology']) {
       entries.push({
         url: `${baseUrl}/${lang}/${category}`,
         lastModified: new Date(),
