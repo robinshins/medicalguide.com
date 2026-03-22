@@ -75,3 +75,7 @@ jobs:
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           CHROME_PATH: /usr/bin/google-chrome-stable
+
+      - name: Submit to IndexNow
+        if: success()
+        run: node indexnow-submit.js
