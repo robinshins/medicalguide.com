@@ -63,9 +63,7 @@ export default async function LangLayout({
         <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <Link href={`/${l}`} className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-100 to-pink-200 p-0.5 flex items-center justify-center">
-                <Image src="/img/shape-16.png" alt="Korea Beauty Guide" width={28} height={28} className="rounded-md" />
-              </div>
+              <Image src="/img/shape-16.png" alt="Korea Beauty Guide" width={28} height={28} className="rounded-md" />
               <span className="text-base font-bold text-gray-900 tracking-tight">{t.siteName}</span>
             </Link>
             <nav className="flex items-center gap-5 text-sm">
