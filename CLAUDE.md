@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Start development server (localhost:3000)
 - `npm run build` — Production build
 - `npm run lint` — ESLint check
+- `node test-publish.js` — Publish 1 article locally (scrape + generate + translate + save)
 
 No test framework is configured.
 
@@ -19,14 +20,18 @@ Medical Korea Guide is an automated multilingual SEO content platform for Korean
 ### Data Pipeline (server-side, `src/lib/`)
 
 ```
-keywords.ts (region x specialty combinations, ordered by population)
+keywords.ts (9,025 region × specialty combinations, ordered by population)
     → scraper.ts (Puppeteer: Naver Place + KakaoMap + Google Maps)
-    → matcher.ts (OpenAI GPT: cross-platform hospital matching)
-    → generator.ts (Claude API: Korean article → 12 language translations)
+    → matcher.ts (GPT-5.4-mini: cross-platform hospital name/address matching)
+    → generator.ts (Claude Sonnet: Korean article → GPT-5.4-mini: 12 language translations)
     → publish.ts (orchestrator: queue management + Firestore save)
 ```
 
-This pipeline runs via `/api/cron` (Vercel cron, 12x daily) or `/api/publish` (manual trigger).
+This pipeline runs via:
+- **GitHub Actions** (`.github/workflows/publish.yml`) — 24x daily at random intervals with 0-10min random delay
+- `/api/cron` (Vercel cron, 12x daily) — backup trigger
+- `/api/publish` (manual POST trigger)
+- `node test-publish.js` (local testing)
 
 ### Frontend (Next.js 16 App Router)
 
@@ -34,7 +39,7 @@ Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages × 2 ca
 
 ### Key Conventions
 
-- **Next.js 16 breaking change**: `params` is a `Promise` — always `await params` before accessing properties. Read `node_modules/next/dist/docs/` before writing new route code.
+- **Next.js 16 breaking change**: `params` is a `Promise` — always `await params` before accessing properties
 - **Import alias**: `@/*` maps to `src/*`
 - **Server-only libs**: Everything in `src/lib/` must never be imported from client components
 - **Dynamic imports**: Puppeteer (`scraper.ts`) and Anthropic SDK (`generator.ts`) are dynamically imported in `publish.ts` to avoid bundling in page renders
@@ -43,6 +48,8 @@ Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages × 2 ca
 - **Article IDs**: Follow pattern `{category}-{slug}-{lang}` (e.g., `dental-gangnam-ko`)
 - **ISR**: Category pages revalidate at 1800s, articles at 3600s
 - **Scraper delays**: 2-3s between requests to avoid rate limiting on Naver/Kakao
+- **Firestore queries**: Avoid composite indexes — sort in JavaScript instead
+- **No emojis**: Neither in UI code nor in Claude-generated article content
 
 ### Environment Variables
 

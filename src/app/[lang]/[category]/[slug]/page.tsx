@@ -13,15 +13,51 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalguide.co.kr';
   let article: Awaited<ReturnType<typeof getArticle>> = null;
   try { article = await getArticle(lang, category, slug); } catch { /* */ }
   if (!article) return { title: 'Not Found' };
   const langConfig = LANG_CONFIG[lang as SupportedLang] || LANG_CONFIG.ko;
+  const canonicalUrl = `${baseUrl}/${lang}/${category}/${slug}`;
+  const ogImage = `${baseUrl}/og/${category === 'dental' ? 'og-dental.png' : 'og-derma.png'}`;
+  const categoryKo = category === 'dental' ? '치과' : '피부과';
+  const hospitalCount = article.hospitals?.length || 0;
+
   return {
     title: article.title,
     description: article.metaDescription,
-    openGraph: { title: article.title, description: article.metaDescription, type: 'article', locale: langConfig.htmlLang, publishedTime: article.publishedAt },
-    alternates: { languages: Object.fromEntries(SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `/${sl}/${category}/${slug}`])) },
+    keywords: `${article.region} ${categoryKo}, ${article.region} ${categoryKo} 추천, ${article.keyword}, ${article.region} ${categoryKo} 잘하는곳, ${article.region} ${categoryKo} 후기`,
+    authors: [{ name: 'Medical Korea Guide', url: baseUrl }],
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: `${article.title} | Medical Korea Guide`,
+      description: article.metaDescription,
+      type: 'article',
+      locale: langConfig.htmlLang,
+      publishedTime: article.publishedAt,
+      siteName: 'Medical Korea Guide',
+      url: canonicalUrl,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: article.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.metaDescription,
+      images: [ogImage],
+      site: '@MedicalKoreaGuide',
+    },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: Object.fromEntries(
+        SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `${baseUrl}/${sl}/${category}/${slug}`])
+      ),
+    },
+    other: {
+      'article:author': 'Medical Korea Guide',
+      'article:section': categoryKo,
+      'article:tag': `${article.region},${categoryKo},${article.specialty || ''},병원추천,리뷰`,
+      'hospital:count': String(hospitalCount),
+    },
   };
 }
 
@@ -33,54 +69,104 @@ function stripEmojis(html: string): string {
 }
 
 function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>>, lang: string, category: string, slug: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalkoreaguide.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://medicalguide.co.kr';
+  const pageUrl = `${baseUrl}/${lang}/${category}/${slug}`;
+  const categoryName = category === 'dental' ? '치과' : '피부과';
+  const ogImage = `${baseUrl}/og/${category === 'dental' ? 'og-dental.png' : 'og-derma.png'}`;
 
-  const hospitalItems = (article.hospitals || []).map((h: HospitalInfo, i: number) => ({
-    '@type': category === 'dental' ? 'Dentist' : 'MedicalClinic',
-    name: h.name,
-    address: { '@type': 'PostalAddress', streetAddress: h.address },
-    telephone: h.phone || undefined,
-    ...(h.kakaoRating ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: h.kakaoRating, reviewCount: h.kakaoReviewCount || h.naverReviewCount, bestRating: 5 } } : {}),
-    ...(h.homepage ? { url: h.homepage } : {}),
-    position: i + 1,
-  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const schemas: any[] = [];
 
-  const faqItems = article.content.match(/<h3[^>]*>([^<]*\?)<\/h3>\s*<p>([^<]+)<\/p>/g);
+  // 1. Article schema
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'MedicalWebPage',
+    headline: article.title,
+    description: article.metaDescription,
+    datePublished: article.publishedAt,
+    dateModified: article.publishedAt,
+    author: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl },
+    publisher: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl, logo: { '@type': 'ImageObject', url: `${baseUrl}/icon-192.png` } },
+    mainEntityOfPage: pageUrl,
+    inLanguage: lang,
+    image: ogImage,
+  });
+
+  // 2. BreadcrumbList (나만의닥터 패턴)
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, item: { '@id': baseUrl, name: 'Medical Korea Guide' } },
+      { '@type': 'ListItem', position: 2, item: { '@id': `${baseUrl}/${lang}/${category}`, name: categoryName } },
+      { '@type': 'ListItem', position: 3, item: { '@id': pageUrl, name: `${article.region} ${categoryName}` } },
+    ],
+  });
+
+  // 3. ItemList with proper ListItem wrapping
+  const hospitals = article.hospitals || [];
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    description: `${article.region} ${categoryName} ${hospitals.length}개 비교 정보`,
+    numberOfItems: hospitals.length,
+    itemListElement: hospitals.map((h: HospitalInfo, i: number) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: h.name,
+      url: h.id ? `https://m.place.naver.com/place/${h.id}` : undefined,
+      image: ogImage,
+    })),
+  });
+
+  // 4. LocalBusiness per hospital (나만의닥터 패턴 — 각 병원 개별 스키마)
+  hospitals.forEach((h: HospitalInfo) => {
+    const addressParts = (h.address || '').split(' ');
+    const region = addressParts[0] || '';
+    const city = addressParts[1] || '';
+    const street = addressParts.slice(2).join(' ');
+
+    schemas.push({
+      '@context': 'https://schema.org',
+      '@type': category === 'dental' ? 'Dentist' : 'MedicalClinic',
+      name: h.name,
+      url: h.id ? `https://m.place.naver.com/place/${h.id}` : (h.homepage || undefined),
+      telephone: h.phone || undefined,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: street,
+        addressLocality: city,
+        addressRegion: region,
+        addressCountry: '대한민국',
+      },
+      ...(h.kakaoRating || h.googleRating ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: h.kakaoRating || h.googleRating,
+          reviewCount: (h.kakaoReviewCount || 0) + (h.naverReviewCount || 0) + (h.googleReviewCount || 0),
+          bestRating: 5,
+        },
+      } : {}),
+      image: ogImage,
+    });
+  });
+
+  // 5. FAQPage
+  const faqItems = article.content.match(/<h3[^>]*>([^<]*\?)<\/h3>\s*<p>([\s\S]*?)<\/p>/g);
   const faqEntries = faqItems?.map(item => {
     const qMatch = item.match(/<h3[^>]*>([^<]+)<\/h3>/);
-    const aMatch = item.match(/<p>([^<]+)<\/p>/);
+    const aMatch = item.match(/<p>([\s\S]*?)<\/p>/);
     if (qMatch && aMatch) return { '@type': 'Question', name: qMatch[1], acceptedAnswer: { '@type': 'Answer', text: aMatch[1] } };
     return null;
   }).filter(Boolean) || [];
-
-  const schemas = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: article.title,
-      description: article.metaDescription,
-      datePublished: article.publishedAt,
-      dateModified: article.publishedAt,
-      author: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl },
-      publisher: { '@type': 'Organization', name: 'Medical Korea Guide', url: baseUrl },
-      mainEntityOfPage: `${baseUrl}/${lang}/${category}/${slug}`,
-      inLanguage: lang,
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      name: article.title,
-      numberOfItems: hospitalItems.length,
-      itemListElement: hospitalItems,
-    },
-  ];
 
   if (faqEntries.length > 0) {
     schemas.push({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: faqEntries,
-    } as unknown as typeof schemas[0]);
+    });
   }
 
   return schemas;
