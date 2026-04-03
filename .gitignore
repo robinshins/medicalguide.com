@@ -42,3 +42,18 @@ next-env.d.ts
 
 # firebase service account
 *-firebase-adminsdk-*.json
+firebase-debug.log
+
+# oh-my-claudecode
+.omc/
+
+# test files
+test-scrape-only.js
+test-scraper.js
+test-scraper.mjs
+
+# assets not in use
+public/shapes/
+
+# data files
+*.xlsx
