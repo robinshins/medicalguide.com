@@ -3,6 +3,7 @@ import { getArticles } from '@/lib/articles';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
 import type { Metadata } from 'next';
+import ArticleGrid from '@/app/components/ArticleGrid';
 
 interface PageProps {
   params: Promise<{ lang: string; category: string }>;
@@ -37,7 +38,7 @@ export default async function CategoryPage({ params }: PageProps) {
 
   let articles: Awaited<ReturnType<typeof getArticles>> = [];
   try {
-    articles = await getArticles(lang, category, 50);
+    articles = await getArticles(lang, category);
   } catch {
     // Firestore may not have data yet
   }
@@ -92,35 +93,20 @@ export default async function CategoryPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {articles.map((article, i) => (
-                <Link
-                  key={article.id}
-                  href={`/${l}/${category}/${article.slug}`}
-                  className={`group bg-white rounded-2xl border border-gray-100 hover:border-rose-200 hover:shadow-lg transition-all overflow-hidden ${
-                    i === 0 ? 'md:col-span-2 lg:col-span-1' : ''
-                  }`}
-                >
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                      <span className="text-xs text-gray-400">{new Date(article.publishedAt).toLocaleDateString(LANG_CONFIG[l].htmlLang)}</span>
-                    </div>
-                    <h2 className="font-bold text-gray-900 group-hover:text-rose-600 mb-2 line-clamp-2 transition-colors">
-                      {article.title}
-                    </h2>
-                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
-                      {article.metaDescription}
-                    </p>
-                  </div>
-                  <div className="px-6 pb-5">
-                    <span className="text-rose-600 text-sm font-medium inline-flex items-center group-hover:translate-x-0.5 transition-transform">
-                      {t.readMore} <svg className="ml-1 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <ArticleGrid
+              articles={articles.map(a => ({
+                id: a.id,
+                slug: a.slug,
+                title: a.title,
+                metaDescription: a.metaDescription,
+                publishedAt: a.publishedAt,
+              }))}
+              lang={l}
+              category={category}
+              htmlLang={LANG_CONFIG[l].htmlLang}
+              readMoreLabel={t.readMore}
+              isKo={isKo}
+            />
           )}
         </div>
       </section>

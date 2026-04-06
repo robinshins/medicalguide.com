@@ -4,7 +4,7 @@ import type { Article } from './types';
 const ARTICLES_COLLECTION = 'articles';
 
 // --- Get published articles (no composite index needed) ---
-export async function getArticles(lang: string, category?: string, limit = 20): Promise<Article[]> {
+export async function getArticles(lang: string, category?: string, limit?: number): Promise<Article[]> {
   let query: FirebaseFirestore.Query = db.collection(ARTICLES_COLLECTION)
     .where('lang', '==', lang);
 
@@ -12,12 +12,12 @@ export async function getArticles(lang: string, category?: string, limit = 20): 
     query = query.where('category', '==', category);
   }
 
-  const snapshot = await query.limit(limit * 2).get();
+  const snapshot = await query.get();
   const articles = snapshot.docs.map(doc => doc.data() as Article);
 
   // Sort in JS to avoid needing composite index
   articles.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
-  return articles.slice(0, limit);
+  return limit ? articles.slice(0, limit) : articles;
 }
 
 // --- Get single article ---
