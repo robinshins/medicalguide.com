@@ -4,6 +4,7 @@ import type { SupportedLang } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import LangDropdown from '@/app/components/LangDropdown';
 
 export async function generateStaticParams() {
   return SUPPORTED_LANGUAGES.map(lang => ({ lang }));
@@ -74,24 +75,7 @@ export default async function LangLayout({
               <Link href={`/${l}/dermatology/pricing`} className="text-gray-400 hover:text-rose-600 font-medium transition-colors hidden sm:block">
                 {isKo ? '가격' : 'Prices'}
               </Link>
-              <div className="relative group">
-                <button className="text-gray-400 hover:text-gray-600 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 transition-colors">
-                  {config.nativeName}
-                </button>
-                <div className="absolute right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 hidden group-hover:block z-50 min-w-[140px]">
-                  {SUPPORTED_LANGUAGES.map(sl => (
-                    <Link
-                      key={sl}
-                      href={`/${sl}`}
-                      className={`block px-3 py-1.5 text-xs transition-colors ${
-                        sl === l ? 'text-rose-600 bg-rose-50 font-medium' : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {LANG_CONFIG[sl].nativeName}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <LangDropdown currentLang={l} currentPath={`/${l}`} />
             </nav>
           </div>
         </header>

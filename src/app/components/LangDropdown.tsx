@@ -46,7 +46,7 @@ export default function LangDropdown({ currentLang, currentPath }: { currentLang
               href={getLangPath(sl)}
               onClick={() => setOpen(false)}
               className={`block px-3 py-2 text-xs transition-colors ${
-                sl === currentLang ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600 hover:bg-gray-50'
+                sl === currentLang ? 'text-rose-600 bg-rose-50 font-medium' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               {LANG_CONFIG[sl].nativeName}
