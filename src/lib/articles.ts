@@ -34,8 +34,10 @@ export async function getAllArticleSlugs(): Promise<{ lang: string; category: st
     .select('lang', 'category', 'slug')
     .get();
 
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return { lang: data.lang, category: data.category, slug: data.slug };
-  });
+  return snapshot.docs
+    .map(doc => {
+      const data = doc.data();
+      return { lang: data.lang, category: data.category, slug: data.slug };
+    })
+    .filter(a => a.category === 'dermatology');
 }
