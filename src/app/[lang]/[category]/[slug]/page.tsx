@@ -73,8 +73,12 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
   const pageUrl = `${baseUrl}/${lang}/${category}/${slug}`;
-  const categoryName = '피부과';
+  const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
+  const t = UI_TRANSLATIONS[l];
+  const langConfig = LANG_CONFIG[l];
+  const categoryName = t.dermatology;
   const ogImage = `${baseUrl}/og/og-derma.png`;
+  const isKo = l === 'ko';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const schemas: any[] = [];
@@ -85,12 +89,13 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     '@type': 'MedicalWebPage',
     headline: article.title,
     description: article.metaDescription,
+    keywords: [article.keyword, article.region, article.specialty].filter(Boolean).join(', '),
     datePublished: article.publishedAt,
     dateModified: article.publishedAt,
     author: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl },
     publisher: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl, logo: { '@type': 'ImageObject', url: `${baseUrl}/img/shape-16.png` } },
     mainEntityOfPage: pageUrl,
-    inLanguage: lang,
+    inLanguage: langConfig.htmlLang,
     image: ogImage,
   });
 
@@ -111,7 +116,9 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     itemListOrder: 'https://schema.org/ItemListOrderAscending',
-    description: `${article.region} ${categoryName} ${hospitals.length}개 비교 정보`,
+    description: isKo
+      ? `${article.region} ${categoryName} ${hospitals.length}개 비교 정보`
+      : `Comparison of ${hospitals.length} ${categoryName} in ${article.region}`,
     numberOfItems: hospitals.length,
     itemListElement: hospitals.map((h: HospitalInfo, i: number) => ({
       '@type': 'ListItem',
@@ -140,7 +147,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
         streetAddress: street,
         addressLocality: city,
         addressRegion: region,
-        addressCountry: '대한민국',
+        addressCountry: 'KR',
       },
       ...(h.kakaoRating || h.googleRating ? {
         aggregateRating: {
@@ -159,7 +166,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
   const faqEntries = faqItems?.map(item => {
     const qMatch = item.match(/<h3[^>]*>([^<]+)<\/h3>/);
     const aMatch = item.match(/<p>([\s\S]*?)<\/p>/);
-    if (qMatch && aMatch) return { '@type': 'Question', name: qMatch[1], acceptedAnswer: { '@type': 'Answer', text: aMatch[1] } };
+    if (qMatch && aMatch) return { '@type': 'Question', name: qMatch[1], acceptedAnswer: { '@type': 'Answer', text: aMatch[1].replace(/<[^>]*>/g, '') } };
     return null;
   }).filter(Boolean) || [];
 

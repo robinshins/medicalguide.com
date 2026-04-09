@@ -43,8 +43,34 @@ export default async function CategoryPage({ params }: PageProps) {
     // Firestore may not have data yet
   }
 
+  const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+  const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+  const langConfig = LANG_CONFIG[l];
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, item: { '@id': baseUrl, name: 'Korea Beauty Guide' } },
+      { '@type': 'ListItem', position: 2, item: { '@id': `${baseUrl}/${lang}/${category}`, name: t.dermatology } },
+    ],
+  };
+
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: t.dermatology,
+    url: `${baseUrl}/${lang}/${category}`,
+    inLanguage: langConfig.htmlLang,
+    description: t.siteDescription,
+    isPartOf: { '@type': 'WebSite', name: 'Korea Beauty Guide', url: baseUrl },
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }} />
+
       {/* Header banner */}
       <section className="bg-gradient-to-r from-rose-950 to-pink-900 text-white">
         <div className="max-w-6xl mx-auto px-4 py-12">

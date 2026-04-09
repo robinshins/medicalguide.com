@@ -38,8 +38,33 @@ export default async function HomePage({
     // Firestore may not be initialized yet
   }
 
+  const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+  const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+  const langConfig = LANG_CONFIG[l];
+
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Korea Beauty Guide',
+    url: baseUrl,
+    logo: { '@type': 'ImageObject', url: `${baseUrl}/img/shape-16.png` },
+    description: t.siteDescription,
+  };
+
+  const webSiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Korea Beauty Guide',
+    url: baseUrl,
+    inLanguage: langConfig.htmlLang,
+    description: t.siteDescription,
+  };
+
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }} />
+
       {/* Hero — centered, editorial style */}
       <section className="relative bg-gradient-to-b from-rose-950 via-pink-950 to-rose-900 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
