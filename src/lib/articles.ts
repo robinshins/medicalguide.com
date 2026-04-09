@@ -29,15 +29,15 @@ export async function getArticle(lang: string, category: string, slug: string): 
 }
 
 // --- Get all articles for sitemap ---
-export async function getAllArticleSlugs(): Promise<{ lang: string; category: string; slug: string }[]> {
+export async function getAllArticleSlugs(): Promise<{ lang: string; category: string; slug: string; publishedAt?: string }[]> {
   const snapshot = await db.collection(ARTICLES_COLLECTION)
-    .select('lang', 'category', 'slug')
+    .select('lang', 'category', 'slug', 'publishedAt')
     .get();
 
   return snapshot.docs
     .map(doc => {
       const data = doc.data();
-      return { lang: data.lang, category: data.category, slug: data.slug };
+      return { lang: data.lang, category: data.category, slug: data.slug, publishedAt: data.publishedAt };
     })
     .filter(a => a.category === 'dermatology');
 }

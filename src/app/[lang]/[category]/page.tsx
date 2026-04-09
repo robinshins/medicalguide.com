@@ -18,13 +18,22 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { lang } = await params;
+  const { lang, category } = await params;
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
+  const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+  const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+  const canonicalUrl = `${baseUrl}/${lang}/${category}`;
 
   return {
     title: `${t.dermatology} - ${t.siteName}`,
     description: t.siteDescription,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: Object.fromEntries(
+        SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `${baseUrl}/${sl}/${category}`])
+      ),
+    },
   };
 }
 

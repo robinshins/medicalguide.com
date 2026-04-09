@@ -27,6 +27,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.9,
       });
     }
+
+    // Pricing pages
+    for (const category of ['dermatology', 'dental']) {
+      entries.push({
+        url: `${baseUrl}/${lang}/${category}/pricing`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      });
+    }
   }
 
   // Article pages from Firestore
@@ -35,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const article of articles) {
       entries.push({
         url: `${baseUrl}/${article.lang}/${article.category}/${article.slug}`,
-        lastModified: new Date(),
+        lastModified: article.publishedAt ? new Date(article.publishedAt) : new Date(),
         changeFrequency: 'weekly',
         priority: 0.8,
       });

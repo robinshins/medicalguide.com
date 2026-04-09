@@ -2,7 +2,49 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
+import type { Metadata } from 'next';
 import { getArticles } from '@/lib/articles';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
+  const t = UI_TRANSLATIONS[l];
+  const config = LANG_CONFIG[l];
+  const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+  const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+  const canonicalUrl = `${baseUrl}/${lang}`;
+  const ogImage = `${baseUrl}/og/og-derma.png`;
+
+  return {
+    title: `${t.siteName} — ${t.siteTagline}`,
+    description: t.siteDescription,
+    openGraph: {
+      title: `${t.siteName} — ${t.siteTagline}`,
+      description: t.siteDescription,
+      locale: config.htmlLang,
+      type: 'website',
+      siteName: 'Korea Beauty Guide',
+      url: canonicalUrl,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: t.siteName }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${t.siteName} — ${t.siteTagline}`,
+      description: t.siteDescription,
+      images: [ogImage],
+    },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: Object.fromEntries(
+        SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `${baseUrl}/${sl}`])
+      ),
+    },
+  };
+}
 
 export const revalidate = 1800;
 
