@@ -35,8 +35,9 @@ export async function initializeKeywordQueue(): Promise<number> {
 // --- Get next pending keyword ---
 export async function getNextPendingKeyword(): Promise<KeywordEntry | null> {
   // Avoid composite index: query by status only, sort in JS
+  // Include 'failed' keywords so they get retried automatically
   const snapshot = await db.collection(KEYWORDS_COLLECTION)
-    .where('status', '==', 'pending')
+    .where('status', 'in', ['pending', 'failed'])
     .limit(100)
     .get();
 
