@@ -380,6 +380,48 @@ JSON으로만 응답:
 }
 
 // ============================================================
+// PRE-AGGREGATED INDEX (reduces list/sitemap reads from N to 1~13)
+// ============================================================
+const INDEX_COLLECTION = 'articles_index';
+const INDEX_DOC_SIZE_WARN = 800_000; // warn when approaching 1MB Firestore limit
+
+function toArticleSummary(doc) {
+  return {
+    id: doc.id,
+    slug: doc.slug,
+    title: doc.title,
+    metaDescription: doc.metaDescription,
+    publishedAt: doc.publishedAt,
+    category: doc.category,
+    specialty: doc.specialty,
+    lang: doc.lang,
+  };
+}
+
+async function upsertArticlesIndex(lang, category, summary) {
+  const ref = db.collection(INDEX_COLLECTION).doc(`${lang}_${category}`);
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const existing = snap.exists ? (snap.data().items || []) : [];
+    const filtered = existing.filter(x => x.id !== summary.id);
+    filtered.unshift(summary);
+    filtered.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+    const payload = {
+      lang,
+      category,
+      items: filtered,
+      updatedAt: new Date().toISOString(),
+      count: filtered.length,
+    };
+    tx.set(ref, payload);
+    const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+    if (approxBytes > INDEX_DOC_SIZE_WARN) {
+      console.warn(`[Index] articles_index/${lang}_${category} ~${(approxBytes / 1024).toFixed(1)}KB (count=${filtered.length}) - approaching 1MB limit; consider sharding by specialty`);
+    }
+  });
+}
+
+// ============================================================
 // FULL PIPELINE - SINGLE BROWSER INSTANCE
 // ============================================================
 async function publishOneArticle(keywordData) {
@@ -568,7 +610,7 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
           const doc = { ...koDoc, id: `${category}-${slug}-${lang}`, lang, title: translated.title, metaDescription: translated.metaDescription, content: translated.content };
           await db.collection('articles').doc(doc.id).set(doc);
           console.log(`  ✓ ${lang}`);
-          return doc.id;
+          return doc;
         } catch (e) {
           if (attempt < maxRetries) {
             console.log(`  ↻ ${lang} retry ${attempt + 1} (${e.message.substring(0, 50)})`);
@@ -584,9 +626,17 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
       Object.entries(langMap).map(([lang, langName]) => translateWithRetry(lang, langName))
     );
 
-    const ok = results.filter(r => r.status === 'fulfilled').length;
+    const translatedDocs = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    const ok = translatedDocs.length;
     const fail = results.filter(r => r.status === 'rejected').length;
     console.log(`  Done: ${ok} ok, ${fail} failed (${((Date.now() - t6) / 1000).toFixed(1)}s)`);
+
+    // Update pre-aggregated index docs (articles_index/{lang}_{category}) for ko + all successful translations.
+    const t7 = Date.now();
+    const allDocs = [koDoc, ...translatedDocs];
+    console.log(`[Index] Upserting articles_index for ${allDocs.length} languages...`);
+    await Promise.all(allDocs.map(d => upsertArticlesIndex(d.lang, d.category, toArticleSummary(d))));
+    console.log(`  Index updated (${((Date.now() - t7) / 1000).toFixed(1)}s)`);
 
     await db.collection('keywords_beauty').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
     return koDoc;
@@ -637,6 +687,21 @@ async function main() {
       console.log(`URL: /ko/${kw.category}/${result.slug}`);
       console.log(`Total time: ${totalTime}s`);
       console.log(`${'='.repeat(60)}`);
+
+      // Invalidate Next.js data cache so the new article shows immediately.
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+      const cronSecret = process.env.CRON_SECRET;
+      if (cronSecret) {
+        try {
+          const res = await fetch(`${siteUrl.startsWith('http') ? siteUrl : 'https://' + siteUrl}/api/revalidate?tag=articles`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${cronSecret}` },
+          });
+          console.log(`[Revalidate] ${res.status} ${res.statusText}`);
+        } catch (err) {
+          console.log(`[Revalidate] skipped: ${err.message}`);
+        }
+      }
     } else {
       console.log(`\nFailed: no hospitals found (${totalTime}s)`);
       // Mark as failed so we skip it next time

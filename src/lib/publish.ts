@@ -1,8 +1,46 @@
 import { db } from './firebase';
-import type { KeywordEntry, Article } from './types';
+import type { KeywordEntry, Article, ArticleSummary } from './types';
 
 const KEYWORDS_COLLECTION = 'keywords_beauty';
 const ARTICLES_COLLECTION = 'articles';
+const INDEX_COLLECTION = 'articles_index';
+const INDEX_DOC_SIZE_WARN = 800_000; // warn when approaching 1MB Firestore limit
+
+function toArticleSummary(article: Article): ArticleSummary {
+  return {
+    id: article.id,
+    slug: article.slug,
+    title: article.title,
+    metaDescription: article.metaDescription,
+    publishedAt: article.publishedAt,
+    category: article.category,
+    specialty: article.specialty,
+    lang: article.lang,
+  };
+}
+
+async function upsertArticlesIndex(lang: string, category: string, summary: ArticleSummary): Promise<void> {
+  const ref = db.collection(INDEX_COLLECTION).doc(`${lang}_${category}`);
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    const existing: ArticleSummary[] = snap.exists ? ((snap.data()?.items as ArticleSummary[]) || []) : [];
+    const filtered = existing.filter(x => x.id !== summary.id);
+    filtered.unshift(summary);
+    filtered.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+    const payload = {
+      lang,
+      category,
+      items: filtered,
+      updatedAt: new Date().toISOString(),
+      count: filtered.length,
+    };
+    tx.set(ref, payload);
+    const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+    if (approxBytes > INDEX_DOC_SIZE_WARN) {
+      console.warn(`[Index] articles_index/${lang}_${category} ~${(approxBytes / 1024).toFixed(1)}KB (count=${filtered.length}) - approaching 1MB limit; consider sharding by specialty`);
+    }
+  });
+}
 
 // --- Initialize keyword queue in Firestore ---
 export async function initializeKeywordQueue(): Promise<number> {
@@ -128,6 +166,24 @@ export async function publishArticle(): Promise<{ success: boolean; keyword?: st
 
       await batch.commit();
 
+      // Update pre-aggregated index docs (articles_index/{lang}_{category}) — one per language.
+      try {
+        await Promise.all(
+          articles.map((a: Article) => upsertArticlesIndex(a.lang, a.category, toArticleSummary(a)))
+        );
+      } catch (e) {
+        console.error('[Publish] Index upsert failed (articles still saved):', e instanceof Error ? e.message : e);
+      }
+
+      // Invalidate the 'articles' cache tag so readers see the new article immediately.
+      // revalidateTag requires Next.js server context; wrap in try/catch for standalone callers.
+      try {
+        const { revalidateTag } = await import('next/cache');
+        revalidateTag('articles', { expire: 0 });
+      } catch (e) {
+        console.log('[Publish] revalidateTag skipped (no Next.js context):', e instanceof Error ? e.message : e);
+      }
+
       console.log(`[Publish] Published ${articles.length} articles for "${keyword.keyword}"`);
       return {
         success: true,
@@ -154,39 +210,5 @@ export async function publishArticle(): Promise<{ success: boolean; keyword?: st
   }
 }
 
-// --- Get published articles (no composite index needed) ---
-export async function getArticles(lang: string, category?: string, limit = 20): Promise<Article[]> {
-  let query: FirebaseFirestore.Query = db.collection(ARTICLES_COLLECTION)
-    .where('lang', '==', lang);
-
-  if (category) {
-    query = query.where('category', '==', category);
-  }
-
-  const snapshot = await query.limit(limit * 2).get();
-  const articles = snapshot.docs.map(doc => doc.data() as Article);
-
-  // Sort in JS to avoid needing composite index
-  articles.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
-  return articles.slice(0, limit);
-}
-
-// --- Get single article ---
-export async function getArticle(lang: string, category: string, slug: string): Promise<Article | null> {
-  const id = `${category}-${slug}-${lang}`;
-  const doc = await db.collection(ARTICLES_COLLECTION).doc(id).get();
-  if (!doc.exists) return null;
-  return doc.data() as Article;
-}
-
-// --- Get all articles for sitemap ---
-export async function getAllArticleSlugs(): Promise<{ lang: string; category: string; slug: string }[]> {
-  const snapshot = await db.collection(ARTICLES_COLLECTION)
-    .select('lang', 'category', 'slug')
-    .get();
-
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return { lang: data.lang, category: data.category, slug: data.slug };
-  });
-}
+// Note: list/detail/sitemap readers moved to src/lib/articles.ts (with unstable_cache).
+// Previous duplicate getArticles/getArticle/getAllArticleSlugs removed — no callers used them.

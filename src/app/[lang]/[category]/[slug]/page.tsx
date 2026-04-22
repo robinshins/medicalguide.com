@@ -11,8 +11,11 @@ interface PageProps {
   params: Promise<{ lang: string; category: string; slug: string }>;
 }
 
+const ALLOWED_CATEGORY = 'dermatology';
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
+  if (category !== ALLOWED_CATEGORY) return { title: 'Not Found' };
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
   let article: Awaited<ReturnType<typeof getArticle>> = null;
@@ -63,7 +66,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export const dynamicParams = true;
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 function stripEmojis(html: string): string {
   return html.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F000}-\u{1FFFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]|[⭐📍📞🏥🕐🏅📋✅❌⚡🔍💡🦷✨🔬💉🏆👨‍⚕️👩‍⚕️📌📎🗓️⏰🅿️]/gu, '');
@@ -183,6 +186,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
 
 export default async function ArticlePage({ params }: PageProps) {
   const { lang, category, slug } = await params;
+  if (category !== ALLOWED_CATEGORY) notFound();
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
 

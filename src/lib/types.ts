@@ -66,3 +66,16 @@ export type SupportedLang =
   | 'ko' | 'en' | 'zh-TW' | 'zh-CN' | 'ja'
   | 'vi' | 'th' | 'ru' | 'es' | 'es-MX'
   | 'pt-BR' | 'de' | 'it';
+
+export type ArticleSummary = Pick<
+  Article,
+  'id' | 'slug' | 'title' | 'metaDescription' | 'publishedAt' | 'category' | 'specialty' | 'lang'
+>;
+
+export interface ArticlesIndex {
+  lang: string;
+  category: 'dental' | 'dermatology';
+  items: ArticleSummary[];
+  updatedAt: string;
+  count: number;
+}

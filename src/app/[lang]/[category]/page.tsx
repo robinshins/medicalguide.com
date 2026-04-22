@@ -1,10 +1,14 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { getArticles } from '@/lib/articles';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
 import type { Metadata } from 'next';
 import ArticleGrid from '@/app/components/ArticleGrid';
+
+// This site is dermatology-only — any other category (e.g. /ko/dental) must 404.
+const ALLOWED_CATEGORY = 'dermatology';
 
 interface PageProps {
   params: Promise<{ lang: string; category: string }>;
@@ -13,13 +17,16 @@ interface PageProps {
 export async function generateStaticParams() {
   const params: { lang: string; category: string }[] = [];
   for (const lang of SUPPORTED_LANGUAGES) {
-    params.push({ lang, category: 'dermatology' });
+    params.push({ lang, category: ALLOWED_CATEGORY });
   }
   return params;
 }
 
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category } = await params;
+  if (category !== ALLOWED_CATEGORY) return { title: 'Not Found' };
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
@@ -38,10 +45,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export const revalidate = 1800;
+export const revalidate = 21600;
 
 export default async function CategoryPage({ params }: PageProps) {
   const { lang, category } = await params;
+  if (category !== ALLOWED_CATEGORY) notFound();
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
   const isKo = l === 'ko';

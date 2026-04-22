@@ -28,15 +28,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
-    // Pricing pages
-    for (const category of ['dermatology', 'dental']) {
-      entries.push({
-        url: `${baseUrl}/${lang}/${category}/pricing`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.8,
-      });
-    }
+    // Pricing pages (dermatology only — dental is out of scope for this site)
+    entries.push({
+      url: `${baseUrl}/${lang}/dermatology/pricing`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    });
   }
 
   // Article pages from Firestore
