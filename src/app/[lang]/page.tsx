@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
+import { DERMA_SPECIALTIES } from '@/lib/specialties';
 import type { SupportedLang } from '@/lib/types';
 import type { Metadata } from 'next';
 import { getArticles } from '@/lib/articles';
@@ -48,20 +49,6 @@ export async function generateMetadata({
 
 export const revalidate = 1800;
 
-const TREATMENTS = [
-  { slug: 'botox', ko: '보톡스', en: 'Botox', icon: '01' },
-  { slug: 'filler', ko: '필러', en: 'Filler', icon: '02' },
-  { slug: 'lifting', ko: '리프팅', en: 'Lifting', icon: '03' },
-  { slug: 'laser', ko: '레이저', en: 'Laser', icon: '04' },
-  { slug: 'acne', ko: '여드름', en: 'Acne', icon: '05' },
-  { slug: 'ulthera', ko: '울쎄라', en: 'Ulthera', icon: '06' },
-  { slug: 'thermage', ko: '써마지', en: 'Thermage', icon: '07' },
-  { slug: 'contouring', ko: '윤곽', en: 'Contouring', icon: '08' },
-  { slug: 'hair-removal', ko: '제모', en: 'Hair Removal', icon: '09' },
-  { slug: 'wrinkle', ko: '주름관리', en: 'Anti-Wrinkle', icon: '10' },
-  { slug: 'scar', ko: '흉터', en: 'Scar', icon: '11' },
-  { slug: 'pore', ko: '모공', en: 'Pore Care', icon: '12' },
-];
 
 export default async function HomePage({
   params,
@@ -180,10 +167,10 @@ export default async function HomePage({
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {TREATMENTS.map(tr => (
+            {DERMA_SPECIALTIES.map(tr => (
               <Link
                 key={tr.slug}
-                href={`/${l}/dermatology`}
+                href={`/${l}/dermatology?s=${tr.slug}`}
                 className="group bg-white rounded-2xl p-4 border border-gray-100 hover:border-rose-300 hover:shadow-md transition-all text-center"
               >
                 <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-br from-rose-100 to-pink-50 flex items-center justify-center text-rose-600 text-xs font-bold group-hover:from-rose-200 group-hover:to-pink-100 transition-colors">

@@ -3,17 +3,24 @@ import type { Article } from './types';
 
 const ARTICLES_COLLECTION = 'articles';
 
+export type ArticleSummary = Pick<
+  Article,
+  'id' | 'slug' | 'title' | 'metaDescription' | 'publishedAt' | 'category' | 'specialty' | 'lang'
+>;
+
 // --- Get published articles (no composite index needed) ---
-export async function getArticles(lang: string, category?: string, limit?: number): Promise<Article[]> {
+// Only fetches list-view fields to keep payload small; full content is loaded via getArticle().
+export async function getArticles(lang: string, category?: string, limit?: number): Promise<ArticleSummary[]> {
   let query: FirebaseFirestore.Query = db.collection(ARTICLES_COLLECTION)
-    .where('lang', '==', lang);
+    .where('lang', '==', lang)
+    .select('id', 'slug', 'title', 'metaDescription', 'publishedAt', 'category', 'specialty', 'lang');
 
   if (category) {
     query = query.where('category', '==', category);
   }
 
   const snapshot = await query.get();
-  const articles = snapshot.docs.map(doc => doc.data() as Article);
+  const articles = snapshot.docs.map(doc => doc.data() as ArticleSummary);
 
   // Sort in JS to avoid needing composite index
   articles.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));

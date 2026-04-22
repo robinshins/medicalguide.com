@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { getArticles } from '@/lib/articles';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
@@ -97,22 +98,7 @@ export default async function CategoryPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* Filter bar */}
-      <section className="bg-white border-b border-gray-100 sticky top-14 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            {isKo ? `${articles.length}개 가이드` : `${articles.length} guides`}
-          </p>
-          <Link
-            href={`/${l}/dermatology/pricing`}
-            className="text-xs font-medium text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg hover:bg-rose-100 transition-colors"
-          >
-            {isKo ? '시술 가격 보기' : 'View Prices'}
-          </Link>
-        </div>
-      </section>
-
-      {/* Article grid */}
+      {/* Article grid + specialty filter */}
       <section className="bg-gray-50 min-h-[60vh]">
         <div className="max-w-6xl mx-auto px-4 py-10">
           {articles.length === 0 ? (
@@ -128,20 +114,24 @@ export default async function CategoryPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <ArticleGrid
-              articles={articles.map(a => ({
-                id: a.id,
-                slug: a.slug,
-                title: a.title,
-                metaDescription: a.metaDescription,
-                publishedAt: a.publishedAt,
-              }))}
-              lang={l}
-              category={category}
-              htmlLang={LANG_CONFIG[l].htmlLang}
-              readMoreLabel={t.readMore}
-              isKo={isKo}
-            />
+            <Suspense fallback={<div className="h-40" />}>
+              <ArticleGrid
+                articles={articles.map(a => ({
+                  id: a.id,
+                  slug: a.slug,
+                  title: a.title,
+                  metaDescription: a.metaDescription,
+                  publishedAt: a.publishedAt,
+                  specialty: a.specialty,
+                }))}
+                lang={l}
+                category={category}
+                htmlLang={LANG_CONFIG[l].htmlLang}
+                readMoreLabel={t.readMore}
+                isKo={isKo}
+                pricingHref={`/${l}/dermatology/pricing`}
+              />
+            </Suspense>
           )}
         </div>
       </section>
