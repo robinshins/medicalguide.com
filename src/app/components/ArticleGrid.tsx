@@ -39,16 +39,29 @@ export default function ArticleGrid({
   const specialtyParam = searchParams.get('s') || '';
   const activeSpecialty = getSpecialtyBySlug(specialtyParam);
 
+  const [query, setQuery] = useState('');
+  const normalizedQuery = query.trim().toLowerCase();
+
   const filtered = useMemo(() => {
-    if (!activeSpecialty) return articles;
-    return articles.filter(a => a.specialty === activeSpecialty.ko);
-  }, [articles, activeSpecialty]);
+    let list = articles;
+    if (activeSpecialty) {
+      list = list.filter(a => a.specialty === activeSpecialty.ko);
+    }
+    if (normalizedQuery) {
+      list = list.filter(a =>
+        a.title.toLowerCase().includes(normalizedQuery) ||
+        a.metaDescription.toLowerCase().includes(normalizedQuery) ||
+        a.slug.toLowerCase().includes(normalizedQuery)
+      );
+    }
+    return list;
+  }, [articles, activeSpecialty, normalizedQuery]);
 
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     setPage(1);
-  }, [specialtyParam]);
+  }, [specialtyParam, normalizedQuery]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const start = (page - 1) * ITEMS_PER_PAGE;
@@ -78,16 +91,41 @@ export default function ArticleGrid({
     <>
       {/* Filter bar */}
       <div className="sticky top-14 z-30 -mx-4 px-4 mb-6 bg-gray-50/90 backdrop-blur supports-[backdrop-filter]:bg-gray-50/70 border-b border-gray-100">
-        <div className="flex items-center justify-between gap-3 py-3">
-          <p className="text-sm text-gray-500 shrink-0">
-            {isKo ? `${filtered.length}개 가이드` : `${filtered.length} guides`}
+        <div className="flex items-center gap-3 py-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+            </svg>
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={isKo ? '지역·클리닉·키워드 검색' : 'Search region, clinic, keyword'}
+              className="w-full bg-white border border-gray-200 rounded-xl text-sm pl-9 pr-9 py-2 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-colors"
+              aria-label={isKo ? '검색' : 'Search'}
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label={isKo ? '검색어 지우기' : 'Clear search'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-700"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 shrink-0 ml-auto">
+            {isKo ? `${filtered.length}개` : `${filtered.length}`}
           </p>
           {pricingHref && (
             <Link
               href={pricingHref}
               className="text-xs font-medium text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg hover:bg-rose-100 transition-colors shrink-0"
             >
-              {isKo ? '시술 가격 보기' : 'View Prices'}
+              {isKo ? '시술 가격' : 'Prices'}
             </Link>
           )}
         </div>
@@ -127,16 +165,25 @@ export default function ArticleGrid({
         <div className="text-center py-20">
           <p className="text-gray-500 text-lg">
             {isKo
-              ? `'${activeSpecialty ? (isKo ? activeSpecialty.ko : activeSpecialty.en) : ''}' 관련 가이드가 아직 없습니다.`
-              : `No guides for '${activeSpecialty?.en ?? ''}' yet.`}
+              ? '검색 결과가 없습니다.'
+              : 'No results found.'}
           </p>
-          <Link
-            href={buildHref(null)}
-            scroll={false}
+          <button
+            type="button"
+            onClick={() => setQuery('')}
             className="inline-block mt-4 text-rose-600 text-sm font-medium hover:underline"
           >
-            {isKo ? '전체 가이드 보기' : 'View all guides'}
-          </Link>
+            {isKo ? '검색어 지우기' : 'Clear search'}
+          </button>
+          {activeSpecialty && (
+            <Link
+              href={buildHref(null)}
+              scroll={false}
+              className="inline-block mt-4 ml-4 text-rose-600 text-sm font-medium hover:underline"
+            >
+              {isKo ? '전체 가이드 보기' : 'View all guides'}
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
