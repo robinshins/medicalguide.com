@@ -11,11 +11,11 @@ interface PageProps {
   params: Promise<{ lang: string; category: string; slug: string }>;
 }
 
-const ALLOWED_CATEGORY = 'dermatology';
+// Note: no category restriction here — pre-existing ChatGPT/search citations for
+// /ko/dental/<slug> etc. must keep resolving. Listing pages & sitemap still block non-dermatology.
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
-  if (category !== ALLOWED_CATEGORY) return { title: 'Not Found' };
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
   let article: Awaited<ReturnType<typeof getArticle>> = null;
@@ -186,7 +186,6 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
 
 export default async function ArticlePage({ params }: PageProps) {
   const { lang, category, slug } = await params;
-  if (category !== ALLOWED_CATEGORY) notFound();
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
 

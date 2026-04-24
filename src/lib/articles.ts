@@ -51,9 +51,11 @@ export const getArticles = unstable_cache(
 );
 
 // --- Get single article ---
+// Intentionally NOT restricted to ALLOWED_CATEGORY: pre-existing ChatGPT/search citations
+// like /ko/dental/busan-full-implant must keep resolving even though we no longer promote
+// dental (listing + sitemap still dermatology-only).
 export const getArticle = unstable_cache(
   async (lang: string, category: string, slug: string): Promise<Article | null> => {
-    if (category !== ALLOWED_CATEGORY) return null;
     const id = `${category}-${slug}-${lang}`;
     const doc = await db.collection(ARTICLES_COLLECTION).doc(id).get();
     if (!doc.exists) return null;
