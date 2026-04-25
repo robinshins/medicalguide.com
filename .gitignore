@@ -57,3 +57,6 @@ public/shapes/
 
 # data files
 *.xlsx
+
+# Transient: URLs queued for IndexNow streaming submission
+.indexnow-pending.txt

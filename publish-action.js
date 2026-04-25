@@ -579,6 +579,11 @@ async function publishOneArticle(keywordData) {
     await db.collection('articles').doc(koDoc.id).set(koDoc);
     console.log(`  Saved: ${koDoc.id}`);
 
+    // Track this URL for IndexNow streaming submission (consumed by indexnow-submit.js)
+    const indexNowFile = path.join(__dirname, '.indexnow-pending.txt');
+    const SITE_URL_FOR_INDEXNOW = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
+    fs.appendFileSync(indexNowFile, `${SITE_URL_FOR_INDEXNOW}/ko/${category}/${slug}\n`);
+
     // 6. Translate to 12 languages in parallel
     const t6 = Date.now();
     console.log('[6/6] Translating to 12 languages in parallel...');
@@ -630,6 +635,14 @@ JSON only: {"title":"translated","metaDescription":"translated","content":"trans
     const ok = translatedDocs.length;
     const fail = results.filter(r => r.status === 'rejected').length;
     console.log(`  Done: ${ok} ok, ${fail} failed (${((Date.now() - t6) / 1000).toFixed(1)}s)`);
+
+    // Append translated URLs to IndexNow pending file (for streaming submission)
+    if (translatedDocs.length > 0) {
+      const lines = translatedDocs
+        .map(d => `${SITE_URL_FOR_INDEXNOW}/${d.lang}/${d.category}/${d.slug}\n`)
+        .join('');
+      fs.appendFileSync(indexNowFile, lines);
+    }
 
     // Update pre-aggregated index docs (articles_index/{lang}_{category}) for ko + all successful translations.
     const t7 = Date.now();
