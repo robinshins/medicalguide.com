@@ -4,7 +4,6 @@ import type { SupportedLang } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import Script from 'next/script';
 import LangDropdown from '@/app/components/LangDropdown';
 
 export async function generateStaticParams() {
@@ -61,12 +60,12 @@ export default async function LangLayout({
   return (
     <html lang={config.htmlLang} dir={config.direction} className="h-full antialiased">
       <head>
-        <Script
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2077902786597790"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
+        <meta name="google-adsense-account" content="ca-pub-2077902786597790" />
       </head>
       <body className="min-h-full flex flex-col bg-white text-gray-900">
         <GoogleAnalytics gaId="G-TY11HDD292" />
