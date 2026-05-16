@@ -113,6 +113,15 @@ export default async function LangLayout({
                   </ul>
                 </div>
                 <div>
+                  <h4 className="text-gray-300 font-semibold uppercase tracking-wider mb-2">{isKo ? '회사' : 'Company'}</h4>
+                  <ul className="space-y-1.5">
+                    <li><Link href={`/${l}/about`} className="hover:text-white transition-colors">{isKo ? '사이트 소개' : 'About Us'}</Link></li>
+                    <li><Link href={`/${l}/privacy`} className="hover:text-white transition-colors">{isKo ? '개인정보처리방침' : 'Privacy Policy'}</Link></li>
+                    <li><Link href={`/${l}/terms`} className="hover:text-white transition-colors">{isKo ? '이용약관' : 'Terms of Service'}</Link></li>
+                    <li><Link href={`/${l}/contact`} className="hover:text-white transition-colors">{isKo ? '문의하기' : 'Contact'}</Link></li>
+                  </ul>
+                </div>
+                <div>
                   <h4 className="text-gray-300 font-semibold uppercase tracking-wider mb-2">{isKo ? '데이터' : 'Data'}</h4>
                   <ul className="space-y-1.5 text-gray-500">
                     <li>Naver Place</li>
