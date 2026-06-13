@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url');
+  let url = request.nextUrl.searchParams.get('url');
   if (!url) {
     return new Response('Missing url parameter', { status: 400 });
   }
@@ -11,6 +11,23 @@ export async function GET(request: NextRequest) {
   // Only allow Naver/Kakao image domains
   if (!url.includes('pstatic.net') && !url.includes('kakaocdn.net')) {
     return new Response('Invalid image domain', { status: 403 });
+  }
+
+  // Naver's resize proxy (search.pstatic.net/common/?...&src=<raw CDN url>) is
+  // aggressively IP-restricted from datacenter IPs and returns a "서비스 이용이
+  // 제한되었습니다" placeholder image (HTTP 200). The raw CDN URL embedded in the
+  // `src` param is far more lenient, so unwrap it and fetch the origin directly.
+  if (url.includes('search.pstatic.net/common')) {
+    try {
+      // URLSearchParams decodes once; the raw CDN URL may contain EUC-KR
+      // percent-encoding, so do NOT decode a second time.
+      const src = new URL(url).searchParams.get('src');
+      if (src && src.includes('pstatic.net')) {
+        url = src;
+      }
+    } catch {
+      // fall through and fetch the original URL
+    }
   }
 
   try {
