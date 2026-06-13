@@ -7,6 +7,7 @@ import type { SupportedLang, HospitalInfo } from '@/lib/types';
 import type { Metadata } from 'next';
 import Comments from '@/app/components/Comments';
 import { BLOG_AUTHOR } from '@/lib/blog';
+import { looksRestricted } from '@/lib/restricted';
 
 interface PageProps {
   params: Promise<{ lang: string; category: string; slug: string }>;
@@ -194,6 +195,11 @@ export default async function ArticlePage({ params }: PageProps) {
   let article: Awaited<ReturnType<typeof getArticle>> = null;
   try { article = await getArticle(lang, category, slug); } catch { /* */ }
   if (!article) notFound();
+
+  // Hide hospital entries whose name is a Naver restriction banner (data was
+  // polluted during rate-limited scrapes). Keeps the live page clean until the
+  // real names are restored by the re-scrape repair script.
+  article.hospitals = (article.hospitals || []).filter(h => !looksRestricted(h.name));
 
   const publishDate = new Date(article.publishedAt).toLocaleDateString(
     LANG_CONFIG[l].htmlLang, { year: 'numeric', month: 'long', day: 'numeric' }

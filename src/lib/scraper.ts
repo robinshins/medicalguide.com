@@ -41,6 +41,11 @@ async function launchBrowser(): Promise<Browser> {
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+// Naver serves restriction banners when it rate-limits / blocks automated access.
+// Shared guard lives in ./restricted so page code can use it without bundling Puppeteer.
+import { looksRestricted } from './restricted';
+export { looksRestricted } from './restricted';
+
 // --- Naver Places Search ---
 export async function searchNaverPlaces(query: string): Promise<{ id: string; name: string }[]> {
   const browser = await launchBrowser();
@@ -285,6 +290,14 @@ export async function getNaverPlaceInfo(placeId: string): Promise<{
     });
 
     await page.close();
+
+    // If Naver served a rate-limit / restriction banner, the parsed `name`
+    // (and most other fields) are garbage. Fail loudly so the caller can retry
+    // or skip — never persist the banner text as a hospital name.
+    if (looksRestricted(detail.name)) {
+      throw new Error('NAVER_RESTRICTED');
+    }
+
     return {
       detail: {
         id: placeId,
@@ -413,8 +426,25 @@ export async function scrapeHospitalData(searchQuery: string, region?: string): 
   for (const place of naverPlaces.slice(0, 5)) {
     console.log(`[Scraper] Getting info for: ${place.name}`);
     try {
-      await delay(3000);
-      const { detail, reviews } = await getNaverPlaceInfo(place.id);
+      // Retry with backoff when Naver rate-limits, so we don't silently drop a
+      // hospital (or persist a restriction banner) on a transient block.
+      let scraped: Awaited<ReturnType<typeof getNaverPlaceInfo>> | null = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await delay(3000 * attempt);
+          scraped = await getNaverPlaceInfo(place.id);
+          break;
+        } catch (err) {
+          const restricted = err instanceof Error && err.message === 'NAVER_RESTRICTED';
+          if (restricted && attempt < 3) {
+            console.warn(`[Scraper]   Naver restricted for ${place.name}, retry ${attempt}/2`);
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (!scraped) throw new Error('NAVER_RESTRICTED');
+      const { detail, reviews } = scraped;
 
       // Match Kakao
       let kakaoRating: number | null = null;
@@ -443,7 +473,9 @@ export async function scrapeHospitalData(searchQuery: string, region?: string): 
 
       hospitals.push({
         id: place.id,
-        name: detail.name || place.name,
+        // Belt-and-suspenders: even if a restriction banner slipped through,
+        // prefer the clean name from the Naver search list.
+        name: (detail.name && !looksRestricted(detail.name)) ? detail.name : place.name,
         category: detail.category || '',
         address: detail.address || '',
         phone: detail.phone || '',
