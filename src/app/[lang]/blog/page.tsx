@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
-import { getAllBlogPosts, BLOG_AUTHOR } from '@/lib/blog';
+import { getAllBlogPosts, getBlogContent, BLOG_AUTHOR } from '@/lib/blog';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -64,27 +64,30 @@ export default async function BlogIndexPage({ params }: PageProps) {
               : 'Aesthetic skin treatment guides written and reviewed by a board-certified dermatologist — practical information, not advertising.'}
           </p>
           <p className="mt-4 text-xs text-rose-200/70">
-            {isKo ? '검수·작성' : 'Written & reviewed by'} · {BLOG_AUTHOR.name} ({BLOG_AUTHOR.role})
+            {isKo ? '검수·작성' : 'Written & reviewed by'} · {BLOG_AUTHOR.name} ({isKo ? BLOG_AUTHOR.role : BLOG_AUTHOR.roleEn})
           </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="grid gap-4">
-          {posts.map(p => (
-            <Link
-              key={p.slug}
-              href={`/${l}/blog/${p.slug}`}
-              className="block bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-rose-200 transition-all"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{p.category}</span>
-                <time dateTime={p.date} className="text-xs text-gray-400">{p.date}</time>
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 mb-1.5 tracking-tight">{p.title}</h2>
-              <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{p.description}</p>
-            </Link>
-          ))}
+          {posts.map(p => {
+            const c = getBlogContent(p, l);
+            return (
+              <Link
+                key={p.slug}
+                href={`/${l}/blog/${p.slug}`}
+                className="block bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-rose-200 transition-all"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{c.category}</span>
+                  <time dateTime={p.date} className="text-xs text-gray-400">{p.date}</time>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 mb-1.5 tracking-tight">{c.title}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{c.description}</p>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

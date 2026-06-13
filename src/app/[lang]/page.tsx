@@ -5,7 +5,7 @@ import { DERMA_SPECIALTIES } from '@/lib/specialties';
 import type { SupportedLang } from '@/lib/types';
 import type { Metadata } from 'next';
 import { getArticles } from '@/lib/articles';
-import { getAllBlogPosts, BLOG_AUTHOR } from '@/lib/blog';
+import { getAllBlogPosts, getBlogContent, BLOG_AUTHOR } from '@/lib/blog';
 
 export async function generateMetadata({
   params,
@@ -241,7 +241,7 @@ export default async function HomePage({
                 <p className="text-gray-500 text-sm mt-1.5">
                   {isKo
                     ? `${BLOG_AUTHOR.name} ${BLOG_AUTHOR.role} · ${BLOG_AUTHOR.credentials}`
-                    : `${BLOG_AUTHOR.name}, ${BLOG_AUTHOR.role}`}
+                    : `${BLOG_AUTHOR.name}, ${BLOG_AUTHOR.roleEn}`}
                 </p>
               </div>
               <Link href={`/${l}/blog`} className="text-rose-600 text-sm font-medium hover:underline hidden sm:block">
@@ -249,17 +249,20 @@ export default async function HomePage({
               </Link>
             </div>
             <div className="grid gap-5 md:grid-cols-3">
-              {blogPosts.map(p => (
-                <Link
-                  key={p.slug}
-                  href={`/${l}/blog/${p.slug}`}
-                  className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-rose-300 hover:shadow-md transition-all"
-                >
-                  <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{p.category}</span>
-                  <h3 className="text-base font-bold text-gray-900 mt-3 mb-2 leading-snug group-hover:text-rose-600 transition-colors">{p.title}</h3>
-                  <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{p.description}</p>
-                </Link>
-              ))}
+              {blogPosts.map(p => {
+                const bc = getBlogContent(p, l);
+                return (
+                  <Link
+                    key={p.slug}
+                    href={`/${l}/blog/${p.slug}`}
+                    className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-rose-300 hover:shadow-md transition-all"
+                  >
+                    <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{bc.category}</span>
+                    <h3 className="text-base font-bold text-gray-900 mt-3 mb-2 leading-snug group-hover:text-rose-600 transition-colors">{bc.title}</h3>
+                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{bc.description}</p>
+                  </Link>
+                );
+              })}
             </div>
             <Link href={`/${l}/blog`} className="mt-6 text-rose-600 text-sm font-medium hover:underline block text-center sm:hidden">
               {isKo ? '전체 보기' : 'View all'} &rarr;

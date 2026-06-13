@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS } from '@/lib/i18n';
 import type { SupportedLang } from '@/lib/types';
-import { getBlogPost, getAllBlogSlugs, getAllBlogPosts, BLOG_AUTHOR } from '@/lib/blog';
+import { getBlogPost, getAllBlogSlugs, getAllBlogPosts, getBlogContent, BLOG_AUTHOR } from '@/lib/blog';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -24,11 +24,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const postp = getBlogPost(slug);
   if (!postp) return { title: 'Not found' };
+  const c = getBlogContent(postp, l);
   const canonical = `${baseUrl()}/${l}/blog/${slug}`;
 
   return {
-    title: postp.title,
-    description: postp.description,
+    title: c.title,
+    description: c.description,
     robots: { index: true, follow: true },
     authors: [{ name: BLOG_AUTHOR.name }],
     alternates: {
@@ -36,8 +37,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       languages: Object.fromEntries(SUPPORTED_LANGUAGES.map(sl => [sl, `${baseUrl()}/${sl}/blog/${slug}`])),
     },
     openGraph: {
-      title: `${postp.title} | Korea Beauty Guide`,
-      description: postp.description,
+      title: `${c.title} | Korea Beauty Guide`,
+      description: c.description,
       type: 'article',
       url: canonical,
       publishedTime: postp.date,
@@ -54,32 +55,23 @@ export default async function BlogPostPage({ params }: PageProps) {
   const postp = getBlogPost(slug);
   if (!postp) notFound();
 
+  const c = getBlogContent(postp, l);
+  const role = isKo ? BLOG_AUTHOR.role : BLOG_AUTHOR.roleEn;
+  const credentials = isKo ? BLOG_AUTHOR.credentials : BLOG_AUTHOR.credentialsEn;
+  const bio = isKo ? BLOG_AUTHOR.bio : BLOG_AUTHOR.bioEn;
   const related = getAllBlogPosts().filter(p => p.slug !== slug).slice(0, 3);
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'MedicalWebPage',
-    headline: postp.title,
-    description: postp.description,
+    headline: c.title,
+    description: c.description,
     datePublished: postp.date,
     dateModified: postp.date,
     inLanguage: l,
-    author: {
-      '@type': 'Person',
-      name: BLOG_AUTHOR.name,
-      jobTitle: BLOG_AUTHOR.role,
-      description: BLOG_AUTHOR.credentials,
-    },
-    reviewedBy: {
-      '@type': 'Person',
-      name: BLOG_AUTHOR.name,
-      jobTitle: BLOG_AUTHOR.role,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Korea Beauty Guide',
-      url: baseUrl(),
-    },
+    author: { '@type': 'Person', name: BLOG_AUTHOR.name, jobTitle: role, description: credentials },
+    reviewedBy: { '@type': 'Person', name: BLOG_AUTHOR.name, jobTitle: role },
+    publisher: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl() },
     url: `${baseUrl()}/${l}/blog/${slug}`,
   };
 
@@ -94,13 +86,13 @@ export default async function BlogPostPage({ params }: PageProps) {
             <span className="text-gray-300">&rsaquo;</span>
             <Link href={`/${l}/blog`} className="hover:text-rose-600 transition-colors">{isKo ? '블로그' : 'Blog'}</Link>
             <span className="text-gray-300">&rsaquo;</span>
-            <span className="text-gray-600">{postp.category}</span>
+            <span className="text-gray-600">{c.category}</span>
           </nav>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{postp.category}</span>
+            <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{c.category}</span>
             <time dateTime={postp.date} className="text-xs text-gray-400">{postp.date}</time>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-gray-900">{postp.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-gray-900">{c.title}</h1>
 
           {/* Author byline (E-E-A-T) */}
           <div className="mt-5 flex items-center gap-3">
@@ -109,16 +101,16 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
             <div className="text-sm">
               <div className="font-semibold text-gray-900">
-                {BLOG_AUTHOR.name} <span className="font-normal text-gray-500">· {BLOG_AUTHOR.role}</span>
+                {BLOG_AUTHOR.name} <span className="font-normal text-gray-500">· {role}</span>
               </div>
-              <div className="text-xs text-gray-400">{BLOG_AUTHOR.credentials}</div>
+              <div className="text-xs text-gray-400">{credentials}</div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <article className="article-content" dangerouslySetInnerHTML={{ __html: postp.html }} />
+        <article className="article-content" dangerouslySetInnerHTML={{ __html: c.html }} />
 
         {/* Author bio card */}
         <div className="mt-12 bg-rose-50/60 border border-rose-100 rounded-2xl p-6">
@@ -127,8 +119,8 @@ export default async function BlogPostPage({ params }: PageProps) {
               {BLOG_AUTHOR.name.slice(0, 1)}
             </div>
             <div>
-              <div className="font-bold text-gray-900">{BLOG_AUTHOR.name} · {BLOG_AUTHOR.role}</div>
-              <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{BLOG_AUTHOR.bio}</p>
+              <div className="font-bold text-gray-900">{BLOG_AUTHOR.name} · {role}</div>
+              <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">{bio}</p>
             </div>
           </div>
         </div>
@@ -138,12 +130,15 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="mt-12">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{isKo ? '함께 읽으면 좋은 글' : 'Related posts'}</h2>
             <div className="grid gap-3">
-              {related.map(r => (
-                <Link key={r.slug} href={`/${l}/blog/${r.slug}`} className="block border border-gray-200 rounded-xl p-4 hover:border-rose-200 hover:shadow-sm transition-all">
-                  <span className="text-xs font-semibold text-rose-600">{r.category}</span>
-                  <div className="text-sm font-semibold text-gray-900 mt-0.5">{r.title}</div>
-                </Link>
-              ))}
+              {related.map(r => {
+                const rc = getBlogContent(r, l);
+                return (
+                  <Link key={r.slug} href={`/${l}/blog/${r.slug}`} className="block border border-gray-200 rounded-xl p-4 hover:border-rose-200 hover:shadow-sm transition-all">
+                    <span className="text-xs font-semibold text-rose-600">{rc.category}</span>
+                    <div className="text-sm font-semibold text-gray-900 mt-0.5">{rc.title}</div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
