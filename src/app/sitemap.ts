@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n';
 import { getAllArticleSlugs } from '@/lib/articles';
+import { getAllBlogPosts } from '@/lib/blog';
 
 export const revalidate = 3600; // Regenerate every hour
 
@@ -35,6 +36,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.8,
     });
+
+    // Blog index + posts (human-authored editorial content)
+    entries.push({
+      url: `${baseUrl}/${lang}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    });
+    for (const blogPost of getAllBlogPosts()) {
+      entries.push({
+        url: `${baseUrl}/${lang}/blog/${blogPost.slug}`,
+        lastModified: new Date(blogPost.date),
+        changeFrequency: 'monthly',
+        priority: 0.7,
+      });
+    }
   }
 
   // Article pages from Firestore

@@ -80,6 +80,9 @@ export default async function LangLayout({
               <Link href={`/${l}/dermatology`} className="text-gray-500 hover:text-rose-600 font-medium transition-colors">
                 {t.dermatology}
               </Link>
+              <Link href={`/${l}/blog`} className="text-gray-500 hover:text-rose-600 font-medium transition-colors">
+                {isKo ? '블로그' : 'Blog'}
+              </Link>
               <Link href={`/${l}/dermatology/pricing`} className="text-gray-400 hover:text-rose-600 font-medium transition-colors hidden sm:block">
                 {isKo ? '가격' : 'Prices'}
               </Link>
@@ -109,6 +112,7 @@ export default async function LangLayout({
                   <h4 className="text-gray-300 font-semibold uppercase tracking-wider mb-2">{isKo ? '카테고리' : 'Categories'}</h4>
                   <ul className="space-y-1.5">
                     <li><Link href={`/${l}/dermatology`} className="hover:text-white transition-colors">{t.dermatology}</Link></li>
+                    <li><Link href={`/${l}/blog`} className="hover:text-white transition-colors">{isKo ? '블로그' : 'Blog'}</Link></li>
                     <li><Link href={`/${l}/dermatology/pricing`} className="hover:text-white transition-colors">{isKo ? '시술 가격' : 'Prices'}</Link></li>
                   </ul>
                 </div>

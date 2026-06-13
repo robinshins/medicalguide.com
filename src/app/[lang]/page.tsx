@@ -5,6 +5,7 @@ import { DERMA_SPECIALTIES } from '@/lib/specialties';
 import type { SupportedLang } from '@/lib/types';
 import type { Metadata } from 'next';
 import { getArticles } from '@/lib/articles';
+import { getAllBlogPosts, BLOG_AUTHOR } from '@/lib/blog';
 
 export async function generateMetadata({
   params,
@@ -66,6 +67,8 @@ export default async function HomePage({
   } catch {
     // Firestore may not be initialized yet
   }
+
+  const blogPosts = getAllBlogPosts().slice(0, 3);
 
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
@@ -193,8 +196,8 @@ export default async function HomePage({
           </h2>
           <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">
             {isKo
-              ? '네이버, 카카오, 구글 3개 플랫폼의 실제 리뷰 데이터를 수집하고 AI가 종합 분석합니다.'
-              : 'We collect real review data from 3 platforms and analyze with AI.'}
+              ? '네이버·카카오·구글의 실제 방문자 리뷰와 건강보험심사평가원 공공데이터를 모아, 피부과 전문의 감수를 거쳐 정리합니다.'
+              : 'We gather real visitor reviews from Naver, Kakao and Google together with official HIRA health data, then organize it under dermatologist review.'}
           </p>
           <div className="relative">
             {/* Connection line */}
@@ -202,28 +205,68 @@ export default async function HomePage({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <TimelineStep
                 num="1"
-                title={isKo ? '리뷰 수집' : 'Collect'}
-                desc={isKo ? '네이버 플레이스, 카카오맵에서 실제 방문 리뷰를 크롤링합니다.' : 'Crawl real visitor reviews from Naver Place & KakaoMap.'}
+                title={isKo ? '리뷰 모으기' : 'Gather'}
+                desc={isKo ? '네이버 플레이스와 카카오맵의 실제 방문자 리뷰와 평점을 모읍니다.' : 'Collect real visitor reviews and ratings from Naver Place and KakaoMap.'}
               />
               <TimelineStep
                 num="2"
-                title={isKo ? '크로스 매칭' : 'Match'}
-                desc={isKo ? 'AI가 네이버·카카오·구글의 동일 클리닉을 자동 매칭합니다.' : 'AI auto-matches the same clinic across Naver, Kakao, Google.'}
+                title={isKo ? '교차 확인' : 'Cross-check'}
+                desc={isKo ? '세 플랫폼에 흩어진 같은 클리닉의 정보를 한데 모아 대조합니다.' : 'Match the same clinic across all three platforms and compare side by side.'}
               />
               <TimelineStep
                 num="3"
-                title={isKo ? 'AI 분석' : 'Analyze'}
-                desc={isKo ? '리뷰, 평점, 전문의, 시설 정보를 종합 분석하여 순위를 매깁니다.' : 'Comprehensively analyze reviews, ratings, specialists, facilities.'}
+                title={isKo ? '전문가 검토' : 'Expert review'}
+                desc={isKo ? '리뷰·평점·전문의·시설 정보를 함께 살펴 신뢰도가 낮은 데이터는 걸러냅니다.' : 'Weigh reviews, ratings, specialists and facilities, filtering out low-confidence data.'}
               />
               <TimelineStep
                 num="4"
-                title={isKo ? '다국어 발행' : 'Publish'}
-                desc={isKo ? '한국어 원문을 작성하고 12개 언어로 자동 번역하여 발행합니다.' : 'Write Korean original and auto-translate to 12 languages.'}
+                title={isKo ? '감수 후 정리' : 'Reviewed & published'}
+                desc={isKo ? '피부과 전문의 감수를 거쳐 정리한 내용을 여러 언어로 제공합니다.' : 'Publish the dermatologist-reviewed result, available in multiple languages.'}
               />
             </div>
           </div>
         </div>
       </section>
+
+      {/* Blog — dermatologist-written guides (E-E-A-T) */}
+      {blogPosts.length > 0 && (
+        <section className="bg-white border-t border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 py-16">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <p className="text-rose-600 text-sm font-semibold mb-1">{isKo ? '전문의 가이드' : 'Expert Guides'}</p>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isKo ? '피부과 전문의가 직접 쓴 시술 가이드' : 'Guides Written by a Dermatologist'}
+                </h2>
+                <p className="text-gray-500 text-sm mt-1.5">
+                  {isKo
+                    ? `${BLOG_AUTHOR.name} ${BLOG_AUTHOR.role} · ${BLOG_AUTHOR.credentials}`
+                    : `${BLOG_AUTHOR.name}, ${BLOG_AUTHOR.role}`}
+                </p>
+              </div>
+              <Link href={`/${l}/blog`} className="text-rose-600 text-sm font-medium hover:underline hidden sm:block">
+                {isKo ? '전체 보기' : 'View all'} &rarr;
+              </Link>
+            </div>
+            <div className="grid gap-5 md:grid-cols-3">
+              {blogPosts.map(p => (
+                <Link
+                  key={p.slug}
+                  href={`/${l}/blog/${p.slug}`}
+                  className="group bg-white rounded-2xl p-6 border border-gray-100 hover:border-rose-300 hover:shadow-md transition-all"
+                >
+                  <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full">{p.category}</span>
+                  <h3 className="text-base font-bold text-gray-900 mt-3 mb-2 leading-snug group-hover:text-rose-600 transition-colors">{p.title}</h3>
+                  <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{p.description}</p>
+                </Link>
+              ))}
+            </div>
+            <Link href={`/${l}/blog`} className="mt-6 text-rose-600 text-sm font-medium hover:underline block text-center sm:hidden">
+              {isKo ? '전체 보기' : 'View all'} &rarr;
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Latest Articles — magazine grid */}
       {dermaArticles.length > 0 && (

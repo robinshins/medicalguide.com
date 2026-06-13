@@ -6,6 +6,7 @@ import { SUPPORTED_LANGUAGES, UI_TRANSLATIONS, LANG_CONFIG } from '@/lib/i18n';
 import type { SupportedLang, HospitalInfo } from '@/lib/types';
 import type { Metadata } from 'next';
 import Comments from '@/app/components/Comments';
+import { BLOG_AUTHOR } from '@/lib/blog';
 
 interface PageProps {
   params: Promise<{ lang: string; category: string; slug: string }>;
@@ -96,6 +97,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     datePublished: article.publishedAt,
     dateModified: article.publishedAt,
     author: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl },
+    reviewedBy: { '@type': 'Person', name: BLOG_AUTHOR.name, jobTitle: BLOG_AUTHOR.role, description: BLOG_AUTHOR.credentials },
     publisher: { '@type': 'Organization', name: 'Korea Beauty Guide', url: baseUrl, logo: { '@type': 'ImageObject', url: `${baseUrl}/img/shape-16.png` } },
     mainEntityOfPage: pageUrl,
     inLanguage: langConfig.htmlLang,
@@ -226,7 +228,7 @@ export default async function ArticlePage({ params }: PageProps) {
                 <time dateTime={article.publishedAt} className="text-xs text-gray-400">{publishDate}</time>
               </div>
               <span className="text-xs text-gray-400">
-                {l === 'ko' ? '뷰티 전문 에디터 감수' : 'Reviewed by Beauty Editor'}
+                {l === 'ko' ? `${BLOG_AUTHOR.name} 피부과 전문의 감수` : `Reviewed by Dr. ${BLOG_AUTHOR.name}, Dermatologist`}
               </span>
             </div>
           </div>
@@ -253,7 +255,7 @@ export default async function ArticlePage({ params }: PageProps) {
                   {/* Hospital image */}
                   {hospital.imageUrls && hospital.imageUrls.length > 0 && (
                     <div className="mb-4 rounded-xl overflow-hidden bg-gray-100">
-                      <img src={`/api/img?url=${encodeURIComponent(hospital.imageUrls[0])}`} alt={hospital.name} className="w-full h-auto rounded-xl" loading="lazy" />
+                      <img src={`/api/img?url=${encodeURIComponent(hospital.imageUrls[0])}&v=2`} alt={hospital.name} className="w-full h-auto rounded-xl" loading="lazy" />
                     </div>
                   )}
 
