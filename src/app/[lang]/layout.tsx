@@ -123,6 +123,12 @@ export default async function LangLayout({
                     <li><Link href={`/${l}/privacy`} className="hover:text-white transition-colors">{isKo ? '개인정보처리방침' : 'Privacy Policy'}</Link></li>
                     <li><Link href={`/${l}/terms`} className="hover:text-white transition-colors">{isKo ? '이용약관' : 'Terms of Service'}</Link></li>
                     <li><Link href={`/${l}/contact`} className="hover:text-white transition-colors">{isKo ? '문의하기' : 'Contact'}</Link></li>
+                    <li>
+                      <a href="mailto:nosun3946@gmail.com" className="hover:text-white transition-colors">
+                        {isKo ? '제안/협업' : 'Suggest / Partner'}
+                      </a>
+                      <span className="block text-gray-600 mt-0.5">nosun3946@gmail.com</span>
+                    </li>
                   </ul>
                 </div>
                 <div>
