@@ -391,18 +391,25 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 - 제목: "${keywordData.keyword}" 포함, 40-60자, 숫자 포함
 - 메타: 120-155자
 
-JSON으로만 응답:
-{"title":"SEO 제목","metaDescription":"메타설명","content":"HTML 본문"}`;
+## 응답 형식 (JSON 금지, 아래 마커 3개를 정확히 사용)
+===TITLE===
+(SEO 제목)
+===META===
+(메타 설명)
+===CONTENT===
+(HTML 본문)`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-5',
     max_tokens: 12000,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
-  const text = response.content[0].text;
-  const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"content"[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Failed to parse article');
-  return JSON.parse(jsonMatch[0]);
+  const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
+  if (!m) throw new Error('Failed to parse article (markers not found)');
+  if (response.stop_reason === 'max_tokens') throw new Error('Article truncated (max_tokens)');
+  return { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
 }
 
 // ============================================================
@@ -627,30 +634,31 @@ async function main() {
   // Query Firestore for next pending dermatology keyword
   // Avoid composite index: query by status only, filter/sort in JS
   console.log('Querying Firestore for next pending dermatology keyword...');
-  const snapshot = await db.collection('keywords_beauty')
-    .where('status', '==', 'pending')
-    .limit(100)
-    .get();
+  // 전체 pending에서 order 최솟값 선택 — limit을 걸면 Firestore가 문서 ID(알파벳)순으로
+  // 잘라서 인구순(order)이 무시되는 버그가 있었음. pending 소진 후에만 failed 재시도.
+  let kw = null;
+  for (const status of ['pending', 'failed']) {
+    const snapshot = await db.collection('keywords_beauty')
+      .where('status', '==', status)
+      .select('order')
+      .get();
+    if (snapshot.empty) continue;
+    let bestId = null, bestOrder = Infinity;
+    snapshot.docs.forEach(d => {
+      const o = d.data().order ?? Number.MAX_SAFE_INTEGER;
+      if (o < bestOrder) { bestOrder = o; bestId = d.id; }
+    });
+    const full = await db.collection('keywords_beauty').doc(bestId).get();
+    kw = { id: full.id, ...full.data() };
+    break;
+  }
 
-  if (snapshot.empty) {
+  if (!kw) {
     console.log('No pending keywords. Initializing keyword queue...');
     await initKeywordQueue();
     console.log('Queue initialized. Run again to publish.');
     process.exit(0);
   }
-
-  // Filter dermatology + sort by order in JS (avoid composite index)
-  const candidates = snapshot.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(d => d.category === 'dermatology')
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-  if (candidates.length === 0) {
-    console.log('No pending dermatology keywords found.');
-    process.exit(0);
-  }
-
-  const kw = candidates[0];
   console.log(`Found: "${kw.keyword}" (order: ${kw.order})\n`);
 
   // Mark as in_progress

@@ -365,18 +365,25 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 - 제목: "${keywordData.keyword}" 포함, 40-60자, 숫자 포함
 - 메타: 120-155자
 
-JSON으로만 응답:
-{"title":"SEO 제목","metaDescription":"메타설명","content":"HTML 본문"}`;
+## 응답 형식 (JSON 금지, 아래 마커 3개를 정확히 사용)
+===TITLE===
+(SEO 제목)
+===META===
+(메타 설명)
+===CONTENT===
+(HTML 본문)`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-5',
     max_tokens: 12000,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
-  const text = response.content[0].text;
-  const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"content"[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Failed to parse article');
-  return JSON.parse(jsonMatch[0]);
+  const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
+  if (!m) throw new Error('Failed to parse article (markers not found)');
+  if (response.stop_reason === 'max_tokens') throw new Error('Article truncated (max_tokens)');
+  return { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
 }
 
 // ============================================================
@@ -664,21 +671,31 @@ async function main() {
   console.log('[Action] Fetching next pending keyword from Firestore...');
   const totalStart = Date.now();
 
-  // Get next pending keyword (avoid composite index: sort in JS)
-  const snap = await db.collection('keywords_beauty')
-    .where('status', '==', 'pending')
-    .limit(100)
-    .get();
-
-  if (snap.empty) {
-    console.log('[Action] No pending keywords. All done!');
-    process.exit(0);
+  // Get next keyword by lowest order across ALL pending docs.
+  // limit(100) 없이 전체를 select('order')로 읽어야 함 — limit을 걸면 Firestore가
+  // 문서 ID(알파벳)순으로 잘라서 인구순(order)이 무시되는 버그가 있었음.
+  // pending 소진 후에만 failed 재시도. 컴포지트 인덱스 회피를 위해 정렬은 JS에서.
+  let kw = null;
+  for (const status of ['pending', 'failed']) {
+    const snap = await db.collection('keywords_beauty')
+      .where('status', '==', status)
+      .select('order')
+      .get();
+    if (snap.empty) continue;
+    let bestId = null, bestOrder = Infinity;
+    snap.docs.forEach(d => {
+      const o = d.data().order ?? Number.MAX_SAFE_INTEGER;
+      if (o < bestOrder) { bestOrder = o; bestId = d.id; }
+    });
+    const full = await db.collection('keywords_beauty').doc(bestId).get();
+    kw = { id: full.id, ...full.data() };
+    break;
   }
 
-  const candidates = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
-  const kw = candidates[0];
+  if (!kw) {
+    console.log('[Action] No pending/failed keywords. All done!');
+    process.exit(0);
+  }
   console.log(`[Action] Next: "${kw.keyword}" (order: ${kw.order}, category: ${kw.category})`);
 
   // Random delay 0~10 minutes to avoid mechanical publish pattern

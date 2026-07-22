@@ -72,18 +72,27 @@ export async function initializeKeywordQueue(): Promise<number> {
 
 // --- Get next pending keyword ---
 export async function getNextPendingKeyword(): Promise<KeywordEntry | null> {
-  // Avoid composite index: query by status only, sort in JS
-  // Include 'failed' keywords so they get retried automatically
-  const snapshot = await db.collection(KEYWORDS_COLLECTION)
-    .where('status', 'in', ['pending', 'failed'])
-    .limit(100)
-    .get();
-
-  if (snapshot.empty) return null;
-  const candidates = snapshot.docs
-    .map(doc => doc.data() as KeywordEntry)
-    .sort((a, b) => (a.order || 0) - (b.order || 0));
-  return candidates[0];
+  // Pick the lowest-order doc across ALL pending keywords.
+  // limit(100) 없이 전체를 select('order')로 읽어야 함 — limit을 걸면 Firestore가
+  // 문서 ID(알파벳)순으로 잘라서 인구순(order)이 무시되는 버그가 있었음.
+  // pending 소진 후에만 failed 재시도. 컴포지트 인덱스 회피를 위해 정렬은 JS에서.
+  for (const status of ['pending', 'failed']) {
+    const snapshot = await db.collection(KEYWORDS_COLLECTION)
+      .where('status', '==', status)
+      .select('order')
+      .get();
+    if (snapshot.empty) continue;
+    let bestId: string | null = null;
+    let bestOrder = Infinity;
+    snapshot.docs.forEach(doc => {
+      const o = (doc.data().order as number | undefined) ?? Number.MAX_SAFE_INTEGER;
+      if (o < bestOrder) { bestOrder = o; bestId = doc.id; }
+    });
+    if (!bestId) continue;
+    const full = await db.collection(KEYWORDS_COLLECTION).doc(bestId).get();
+    return full.data() as KeywordEntry;
+  }
+  return null;
 }
 
 // --- Publish a single article ---

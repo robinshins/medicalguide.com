@@ -15,6 +15,18 @@ interface PageProps {
 
 // Note: no category restriction here — pre-existing ChatGPT/search citations for
 // /ko/dental/<slug> etc. must keep resolving. Listing pages & sitemap still block non-dermatology.
+//
+// Those foreign-category articles are OWNED by the dental site (medicalguide.co.kr) and live in
+// the shared `articles` Firestore collection. Serving them here verbatim under a self-canonical
+// duplicated the same page on two domains, so anything that is not OUR_CATEGORY is now rendered
+// with a cross-domain canonical + noindex: the URL keeps resolving for old citations, but only
+// the owning site gets indexed. Labels (치과/피부과) follow the article's real category too.
+const OUR_CATEGORY = 'dermatology';
+const DENTAL_SITE_URL = 'https://www.medicalguide.co.kr';
+
+function categoryLabelKo(category: string): string {
+  return category === 'dental' ? '치과' : '피부과';
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category, slug } = await params;
@@ -24,9 +36,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try { article = await getArticle(lang, category, slug); } catch { /* */ }
   if (!article) return { title: 'Not Found' };
   const langConfig = LANG_CONFIG[lang as SupportedLang] || LANG_CONFIG.ko;
-  const canonicalUrl = `${baseUrl}/${lang}/${category}/${slug}`;
+
+  // Articles from another site's category: point every canonical/hreflang at the owning domain.
+  const isForeignCategory = category !== OUR_CATEGORY;
+  const ownerBaseUrl = isForeignCategory ? DENTAL_SITE_URL : baseUrl;
+  const canonicalUrl = `${ownerBaseUrl}/${lang}/${category}/${slug}`;
   const ogImage = `${baseUrl}/og/og-derma.png`;
-  const categoryKo = '피부과';
+  const categoryKo = categoryLabelKo(category);
   const hospitalCount = article.hospitals?.length || 0;
 
   return {
@@ -34,7 +50,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: article.metaDescription,
     keywords: `${article.region} ${categoryKo}, ${article.region} ${categoryKo} 추천, ${article.keyword}, ${article.region} 뷰티클리닉, ${article.region} ${categoryKo} 후기`,
     authors: [{ name: 'Korea Beauty Guide', url: baseUrl }],
-    robots: { index: true, follow: true },
+    // noindex on foreign categories — the owning site is the one that should rank.
+    robots: { index: !isForeignCategory, follow: true },
     openGraph: {
       title: `${article.title} | Korea Beauty Guide`,
       description: article.metaDescription,
@@ -55,7 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: canonicalUrl,
       languages: Object.fromEntries(
-        SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `${baseUrl}/${sl}/${category}/${slug}`])
+        SUPPORTED_LANGUAGES.map(sl => [LANG_CONFIG[sl].htmlLang, `${ownerBaseUrl}/${sl}/${category}/${slug}`])
       ),
     },
     other: {
@@ -77,11 +94,18 @@ function stripEmojis(html: string): string {
 function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>>, lang: string, category: string, slug: string) {
   const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.medicalkoreaguide.com';
   const baseUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-  const pageUrl = `${baseUrl}/${lang}/${category}/${slug}`;
   const l = (SUPPORTED_LANGUAGES.includes(lang as SupportedLang) ? lang : 'ko') as SupportedLang;
   const t = UI_TRANSLATIONS[l];
   const langConfig = LANG_CONFIG[l];
-  const categoryName = t.dermatology;
+  // Foreign-category articles belong to the dental site — keep structured data pointing there
+  // and describe them as what they actually are, not as dermatology.
+  const isForeignCategory = category !== OUR_CATEGORY;
+  const ownerBaseUrl = isForeignCategory ? DENTAL_SITE_URL : baseUrl;
+  const pageUrl = `${ownerBaseUrl}/${lang}/${category}/${slug}`;
+  // This site's i18n has no dental strings (it is dermatology-only), so label foreign
+  // dental articles directly instead of mislabelling them as dermatology.
+  const categoryName = category === 'dental' ? (l === 'ko' ? '치과' : 'Dental Clinic') : t.dermatology;
+  const clinicType = category === 'dental' ? 'Dentist' : 'MedicalClinic';
   const ogImage = `${baseUrl}/og/og-derma.png`;
   const isKo = l === 'ko';
 
@@ -110,8 +134,8 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, item: { '@id': baseUrl, name: 'Korea Beauty Guide' } },
-      { '@type': 'ListItem', position: 2, item: { '@id': `${baseUrl}/${lang}/${category}`, name: categoryName } },
+      { '@type': 'ListItem', position: 1, item: { '@id': ownerBaseUrl, name: 'Korea Beauty Guide' } },
+      { '@type': 'ListItem', position: 2, item: { '@id': `${ownerBaseUrl}/${lang}/${category}`, name: categoryName } },
       { '@type': 'ListItem', position: 3, item: { '@id': pageUrl, name: `${article.region} ${categoryName}` } },
     ],
   });
@@ -144,7 +168,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
 
     schemas.push({
       '@context': 'https://schema.org',
-      '@type': 'MedicalClinic',
+      '@type': clinicType,
       name: h.name,
       url: h.id ? `https://m.place.naver.com/place/${h.id}` : (h.homepage || undefined),
       telephone: h.phone || undefined,
@@ -220,9 +244,17 @@ export default async function ArticlePage({ params }: PageProps) {
           <nav className="text-sm text-gray-400 mb-6 flex items-center gap-2">
             <Link href={`/${l}`} className="hover:text-rose-600 transition-colors">{t.backToHome}</Link>
             <span className="text-gray-300">&rsaquo;</span>
-            <Link href={`/${l}/${category}`} className="hover:text-rose-600 transition-colors">
-              {t.dermatology}
-            </Link>
+            {category === OUR_CATEGORY ? (
+              <Link href={`/${l}/${category}`} className="hover:text-rose-600 transition-colors">
+                {t.dermatology}
+              </Link>
+            ) : (
+              // Foreign category: our own listing page 404s for it, so link to the owning site
+              // and label it as the category the article actually belongs to.
+              <a href={`${DENTAL_SITE_URL}/${l}/${category}`} className="hover:text-rose-600 transition-colors">
+                {categoryLabelKo(category)}
+              </a>
+            )}
             <span className="text-gray-300">&rsaquo;</span>
             <span className="text-gray-600">{article.region}</span>
           </nav>

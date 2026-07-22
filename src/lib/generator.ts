@@ -129,34 +129,34 @@ e) 실용 팁${isSpecialty ? `\nf) ${keyword.specialty} 특화 정보` : ''}
 - 자연스러운 구어체 섞기
 - AI 인용에 적합한 완결 문장 작성
 
-## 응답: JSON만
-{"title":"SEO 제목 40-60자","metaDescription":"120-155자","content":"HTML 본문"}`;
+## 응답 형식 (JSON 금지, 아래 마커 3개를 정확히 사용)
+===TITLE===
+(SEO 제목 40-60자)
+===META===
+(메타 설명 120-155자)
+===CONTENT===
+(HTML 본문)`;
 
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-5',
     max_tokens: 12000,
+    thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
-  const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"metaDescription"[\s\S]*"content"[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('Failed to parse article JSON from Claude response');
+  const text = response.content
+    .filter((b): b is Extract<typeof response.content[number], { type: 'text' }> => b.type === 'text')
+    .map(b => b.text)
+    .join('\n');
+  const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
+  if (!m) {
+    throw new Error('Failed to parse article from Claude response (markers not found)');
   }
-
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
-    const metaMatch = text.match(/"metaDescription"\s*:\s*"([^"]+)"/);
-    const contentMatch = text.match(/"content"\s*:\s*"([\s\S]+?)"\s*\}/);
-    return {
-      title: titleMatch?.[1] || `${keyword.keyword} 추천 ${hospitals.length}곳`,
-      metaDescription: metaMatch?.[1] || `${keyword.region} ${categoryKo} 추천. 네이버/카카오 리뷰 기반 실제 방문자 후기와 전문의 정보를 종합 분석했습니다.`,
-      content: contentMatch?.[1] || text,
-    };
+  if (response.stop_reason === 'max_tokens') {
+    throw new Error('Article truncated (max_tokens)');
   }
+  return { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
 }
 
 // --- Translate article to other languages ---

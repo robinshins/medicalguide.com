@@ -1,34 +1,21 @@
 name: Publish Articles
 
 on:
-  # Auto-publish disabled — investigating de-indexing on Google/Naver.
-  # schedule:
-  #   # 24 crons per day (~30min intervals, staggered, KST = UTC+9)
-  #   - cron: '31 15 * * *'   # KST 00:31
-  #   - cron: '19 16 * * *'   # KST 01:19
-  #   - cron: '47 16 * * *'   # KST 01:47
-  #   - cron: '8 17 * * *'    # KST 02:08
-  #   - cron: '53 17 * * *'   # KST 02:53
-  #   - cron: '22 18 * * *'   # KST 03:22
-  #   - cron: '41 19 * * *'   # KST 04:41
-  #   - cron: '14 20 * * *'   # KST 05:14
-  #   - cron: '36 21 * * *'   # KST 06:36
-  #   - cron: '5 22 * * *'    # KST 07:05
-  #   - cron: '48 22 * * *'   # KST 07:48
-  #   - cron: '27 23 * * *'   # KST 08:27
-  #   - cron: '11 0 * * *'    # KST 09:11
-  #   - cron: '42 0 * * *'    # KST 09:42
-  #   - cron: '18 1 * * *'    # KST 10:18
-  #   - cron: '55 1 * * *'    # KST 10:55
-  #   - cron: '33 2 * * *'    # KST 11:33
-  #   - cron: '7 3 * * *'     # KST 12:07
-  #   - cron: '44 3 * * *'    # KST 12:44
-  #   - cron: '21 4 * * *'    # KST 13:21
-  #   - cron: '52 5 * * *'    # KST 14:52
-  #   - cron: '16 7 * * *'    # KST 16:16
-  #   - cron: '39 9 * * *'    # KST 18:39
-  #   - cron: '3 12 * * *'    # KST 21:03
-  workflow_dispatch: # Manual trigger only
+  schedule:
+    # 12 crons per day (기존 24회에서 절반으로 감축, 간격 ~2배 — 스팸/색인 페널티 완화)
+    - cron: '31 15 * * *'   # KST 00:31
+    - cron: '47 16 * * *'   # KST 01:47
+    - cron: '53 17 * * *'   # KST 02:53
+    - cron: '41 19 * * *'   # KST 04:41
+    - cron: '36 21 * * *'   # KST 06:36
+    - cron: '48 22 * * *'   # KST 07:48
+    - cron: '11 0 * * *'    # KST 09:11
+    - cron: '18 1 * * *'    # KST 10:18
+    - cron: '33 2 * * *'    # KST 11:33
+    - cron: '44 3 * * *'    # KST 12:44
+    - cron: '52 5 * * *'    # KST 14:52
+    - cron: '39 9 * * *'    # KST 18:39
+  workflow_dispatch: # Manual trigger
 
 jobs:
   publish:
