@@ -508,15 +508,36 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-5',
-    max_tokens: 12000,
+    // 치과 러너에서 이 한도가 낮아 잘린 글이 다수 발행됐다. 여기는 stop_reason 검사가
+    // 있어 발행은 막혔지만, 한도에 붙을 때마다 발행 1회가 통째로 버려지므로 같이 올린다.
+    max_tokens: 24000,
     thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   });
+  if (response.stop_reason === 'max_tokens') {
+    throw new Error(`Article truncated (max_tokens, output=${response.usage?.output_tokens})`);
+  }
   const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
   const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
   if (!m) throw new Error('Failed to parse article (markers not found)');
-  if (response.stop_reason === 'max_tokens') throw new Error('Article truncated (max_tokens)');
-  return { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
+  const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
+  assertArticleSane(article, keywordData);
+  return article;
+}
+
+// 마커 파싱이 성공해도 본문이 짧거나 열린 태그로 끝나면 발행하지 않는다.
+// stop_reason만으로는 잡히지 않는 절단이 있다.
+function assertArticleSane(a, keywordData) {
+  if (!a?.title?.trim()) throw new Error('empty title');
+  if (!a?.metaDescription?.trim()) throw new Error('empty metaDescription');
+  const c = (a.content || '').trim();
+  if (c.length < 2500) throw new Error(`content too short: ${c.length} chars (잘린 글로 간주)`);
+  if (!/<\/(h2|h3|p|ul|ol|table|blockquote)>$/.test(c)) {
+    throw new Error(`content does not end on a closed block tag: ...${c.slice(-40)}`);
+  }
+  if (keywordData?.region && !c.includes(keywordData.region)) {
+    throw new Error(`content never mentions region "${keywordData.region}"`);
+  }
 }
 
 // ============================================================

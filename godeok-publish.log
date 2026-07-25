@@ -1,0 +1,480 @@
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[Godeok] Using cached data
+
+[Godeok data] {
+  "name": "고덕퍼스트치과의원",
+  "address": "경기 평택시 고덕로 250 에듀스카이 4층 401, 402호",
+  "phone": "031-611-3222",
+  "naverReviewCount": 411,
+  "kakaoRating": 4.6,
+  "kakaoReviewCount": 196,
+  "googleRating": 5,
+  "specialistsInfo": "통합치의학과 전문의 1명 | 진료과목: 통합치의학과, 구강내과, 구강병리과, 구강악안면외과, 소아치과, 영상치의학과, 예방치과, 치과교정과, 치과보존과, 치과보철과, 치주과 | 콘빔CT 1대",
+  "reviewsScraped": 8
+}
+
+============================================================
+[Publish] 평택 치과 (dental-pyeongtaek)
+============================================================
+[Scrape] Naver search: "평택 치과"
+  Found 5 places: 365래온치과병원, 키즈앤패밀리치과의원 평택, 화이트라인치과의원 평택, 연세꿈꾸는치과교정과치과의원 평택지제점, 고덕키즈앤탑치과의원
+  365래온치과병원...
+  키즈앤패밀리치과의원 평택...
+  화이트라인치과의원 평택...
+  연세꿈꾸는치과교정과치과의원 평택지제점...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 연세꿈꾸는치과교정과치과의원 평택지제점
+[Generate] Korean article...
+[FAIL] dental-pyeongtaek: 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-sonnet-4-20250514"},"request_id":"req_011CdHNvC4vc1aMDnZpi9pWU"}
+
+============================================================
+[Publish] 평택 임플란트 치과 (dental-pyeongtaek-implant)
+============================================================
+[Scrape] Naver search: "평택 임플란트 치과"
+  Found 5 places: 365래온치과병원치과, 키즈앤패밀리치과의원 평택치과, 화이트라인치과의원 평택치과, 연세꿈꾸는치과교정과치과의원 평택지제점치과, 평택본플란트치과의원치과
+  365래온치과병원치과...
+  Failed for 365래온치과병원치과: Attempted to use detached Frame 'B92C05249EB80B559C50B833C523DC2E'.
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: 🛡️ auth for agents: https://vestauth.com
+[Godeok] Using cached data
+
+[Godeok data] {
+  "name": "고덕퍼스트치과의원",
+  "address": "경기 평택시 고덕로 250 에듀스카이 4층 401, 402호",
+  "phone": "031-611-3222",
+  "naverReviewCount": 411,
+  "kakaoRating": 4.6,
+  "kakaoReviewCount": 196,
+  "googleRating": 5,
+  "specialistsInfo": "통합치의학과 전문의 1명 | 진료과목: 통합치의학과, 구강내과, 구강병리과, 구강악안면외과, 소아치과, 영상치의학과, 예방치과, 치과교정과, 치과보존과, 치과보철과, 치주과 | 콘빔CT 1대",
+  "reviewsScraped": 8
+}
+
+============================================================
+[Publish] 평택 치과 (dental-pyeongtaek)
+============================================================
+[Scrape] Naver search: "평택 치과"
+  Found 5 places: 365래온치과병원, 키즈앤패밀리치과의원 평택, 화이트라인치과의원 평택, 연세꿈꾸는치과교정과치과의원 평택지제점, 고덕키즈앤탑치과의원
+  365래온치과병원...
+  키즈앤패밀리치과의원 평택...
+  화이트라인치과의원 평택...
+  연세꿈꾸는치과교정과치과의원 평택지제점...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 연세꿈꾸는치과교정과치과의원 평택지제점
+[Generate] Korean article...
+[FAIL] dental-pyeongtaek: Cannot read properties of undefined (reading 'match')
+
+============================================================
+[Publish] 평택 임플란트 치과 (dental-pyeongtaek-implant)
+============================================================
+[Scrape] Naver search: "평택 임플란트 치과"
+  Found 5 places: 365래온치과병원치과, 키즈앤패밀리치과의원 평택치과, 화이트라인치과의원 평택치과, 연세꿈꾸는치과교정과치과의원 평택지제점치과, 평택본플란트치과의원치과
+  365래온치과병원치과...
+  Failed for 365래온치과병원치과: Execution context was destroyed
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[Godeok] Using cached data
+
+[Godeok data] {
+  "name": "고덕퍼스트치과의원",
+  "address": "경기 평택시 고덕로 250 에듀스카이 4층 401, 402호",
+  "phone": "031-611-3222",
+  "naverReviewCount": 411,
+  "kakaoRating": 4.6,
+  "kakaoReviewCount": 196,
+  "googleRating": 5,
+  "specialistsInfo": "통합치의학과 전문의 1명 | 진료과목: 통합치의학과, 구강내과, 구강병리과, 구강악안면외과, 소아치과, 영상치의학과, 예방치과, 치과교정과, 치과보존과, 치과보철과, 치주과 | 콘빔CT 1대",
+  "reviewsScraped": 8
+}
+
+============================================================
+[Publish] 평택 치과 (dental-pyeongtaek)
+============================================================
+[Scrape] Naver search: "평택 치과"
+  Found 5 places: 365래온치과병원, 키즈앤패밀리치과의원 평택, 화이트라인치과의원 평택, 연세꿈꾸는치과교정과치과의원 평택지제점, 고덕키즈앤탑치과의원
+  365래온치과병원...
+  키즈앤패밀리치과의원 평택...
+  화이트라인치과의원 평택...
+  연세꿈꾸는치과교정과치과의원 평택지제점...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 연세꿈꾸는치과교정과치과의원 평택지제점
+[Generate] Korean article...
+[FAIL] dental-pyeongtaek: Expected ',' or '}' after property value in JSON at position 496 (line 1 column 497)
+
+============================================================
+[Publish] 평택 임플란트 치과 (dental-pyeongtaek-implant)
+============================================================
+[Scrape] Naver search: "평택 임플란트 치과"
+  Found 5 places: 365래온치과병원치과, 키즈앤패밀리치과의원 평택치과, 화이트라인치과의원 평택치과, 연세꿈꾸는치과교정과치과의원 평택지제점치과, 평택본플란트치과의원치과
+  365래온치과병원치과...
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: 🛡️ auth for agents: https://vestauth.com
+[Godeok] Using cached data
+
+[Godeok data] {
+  "name": "고덕퍼스트치과의원",
+  "address": "경기 평택시 고덕로 250 에듀스카이 4층 401, 402호",
+  "phone": "031-611-3222",
+  "naverReviewCount": 411,
+  "kakaoRating": 4.6,
+  "kakaoReviewCount": 196,
+  "googleRating": 5,
+  "specialistsInfo": "통합치의학과 전문의 1명 | 진료과목: 통합치의학과, 구강내과, 구강병리과, 구강악안면외과, 소아치과, 영상치의학과, 예방치과, 치과교정과, 치과보존과, 치과보철과, 치주과 | 콘빔CT 1대",
+  "reviewsScraped": 8
+}
+
+============================================================
+[Publish] 평택 치과 (dental-pyeongtaek)
+============================================================
+[Scrape] Naver search: "평택 치과"
+  Found 5 places: 365래온치과병원, 키즈앤패밀리치과의원 평택, 화이트라인치과의원 평택, 연세꿈꾸는치과교정과치과의원 평택지제점, 고덕키즈앤탑치과의원
+  365래온치과병원...
+  키즈앤패밀리치과의원 평택...
+  화이트라인치과의원 평택...
+  연세꿈꾸는치과교정과치과의원 평택지제점...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 연세꿈꾸는치과교정과치과의원 평택지제점
+[Generate] Korean article...
+  Title: 평택 치과 추천 5곳 완벽 비교 - 리뷰 5,748건 분석 결과 총정리 (2026)
+  Saved: dental-pyeongtaek-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok zh-CN
+  ok ja
+  ok es-MX
+  ok es
+  ok ru
+  ok pt-BR
+  ok zh-TW
+  ok vi
+  ok it
+  ok th
+  ok de
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek
+
+============================================================
+[Publish] 평택 임플란트 치과 (dental-pyeongtaek-implant)
+============================================================
+[Scrape] Naver search: "평택 임플란트 치과"
+  Found 5 places: 365래온치과병원치과, 키즈앤패밀리치과의원 평택치과, 화이트라인치과의원 평택치과, 연세꿈꾸는치과교정과치과의원 평택지제점치과, 평택본플란트치과의원치과
+  365래온치과병원치과...
+  키즈앤패밀리치과의원 평택치과...
+  화이트라인치과의원 평택치과...
+  연세꿈꾸는치과교정과치과의원 평택지제점치과...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 연세꿈꾸는치과교정과치과의원 평택지제점
+[Generate] Korean article...
+  Title: 평택 임플란트 치과 추천 5곳 비교 분석, 리뷰 3900건 데이터로 확인한 결과
+  Saved: dental-pyeongtaek-implant-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok es-MX
+  ok zh-CN
+  ok zh-TW
+  ok ja
+  ok vi
+  ok pt-BR
+  ok es
+  ok ru
+  ok it
+  ok de
+  ok th
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-implant
+
+============================================================
+[Publish] 평택 치아교정 치과 (dental-pyeongtaek-orthodontics)
+============================================================
+[Scrape] Naver search: "평택 치아교정 치과"
+  Found 5 places: 키즈앤패밀리치과의원 평택치과, 화이트라인치과의원 평택치과, 고덕키즈앤탑치과의원치과, 서울이라인치과교정과치과의원치과, 평택본플란트치과의원치과
+  키즈앤패밀리치과의원 평택치과...
+  화이트라인치과의원 평택치과...
+  고덕키즈앤탑치과의원치과...
+  서울이라인치과교정과치과의원치과...
+  Final lineup: 고덕퍼스트치과의원 > 키즈앤패밀리치과의원 평택 > 화이트라인치과의원 평택 > 고덕키즈앤탑치과의원 > 서울이라인치과교정과치과의원
+[Generate] Korean article...
+  Title: 평택 치아교정 치과 5곳 완벽 비교, 411건 방문자 리뷰로 검증한 2026년 후기
+  Saved: dental-pyeongtaek-orthodontics-ko
+[Translate] 12 languages in parallel...
+  ok zh-CN
+  ok en
+  ok es-MX
+  ok es
+  ok zh-TW
+  ok ja
+  ok pt-BR
+  ok it
+  ok de
+  ok th
+  ok vi
+  ok ru
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-orthodontics
+
+============================================================
+[Publish] 평택 전체임플란트 치과 (dental-pyeongtaek-full-implant)
+============================================================
+[Scrape] Naver search: "평택 전체임플란트 치과"
+  Found 2 places: 이플란트치과의원 평택치과, 삼성서울치과의원치과
+  이플란트치과의원 평택치과...
+  삼성서울치과의원치과...
+  Batch GPT matching for 1 hospitals...
+  Final lineup: 고덕퍼스트치과의원 > 이플란트치과의원 평택 > 삼성서울치과의원
+[Generate] Korean article...
+  Title: 평택 전체임플란트 치과 추천 3곳 비교, 리뷰 1,116건 데이터 분석 결과
+  Saved: dental-pyeongtaek-full-implant-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok zh-CN
+  ok pt-BR
+  ok es
+  ok zh-TW
+  ok vi
+  ok es-MX
+  ok ja
+  ok ru
+  ok it
+  ok de
+  ok th
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-full-implant
+
+============================================================
+[Publish] 평택 사랑니발치 치과 (dental-pyeongtaek-wisdom-tooth)
+============================================================
+[Scrape] Naver search: "평택 사랑니발치 치과"
+  Found 5 places: 사이좋은치과의원치과, 사람사랑치과의원 평택지제점치과, 고덕애플치과의원치과, 송탄바른치과의원치과, 평택본플란트치과의원치과
+  사이좋은치과의원치과...
+  사람사랑치과의원 평택지제점치과...
+  고덕애플치과의원치과...
+  송탄바른치과의원치과...
+  Batch GPT matching for 1 hospitals...
+  Final lineup: 고덕퍼스트치과의원 > 사이좋은치과의원 > 사람사랑치과의원 평택지제점 > 고덕애플치과의원 > 송탄바른치과의원
+[Generate] Korean article...
+  Title: 평택 사랑니발치 치과 추천 5곳 완전 비교, 리뷰 2460건 분석 후기 총정리
+  Saved: dental-pyeongtaek-wisdom-tooth-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok zh-CN
+  ok es
+  ok ru
+  ok de
+  ok zh-TW
+  ok vi
+  ok th
+  ok ja
+  ok es-MX
+  ok it
+  ok pt-BR
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-wisdom-tooth
+
+============================================================
+[Publish] 평택 충치치료 치과 (dental-pyeongtaek-cavity)
+============================================================
+[Scrape] Naver search: "평택 충치치료 치과"
+  Found 5 places: 화이트라인치과의원 평택치과, 서울탑플란트치과의원 평택치과, 365이룩치과의원치과, 송탄바른치과의원치과, 고덕키즈앤탑치과의원치과
+  화이트라인치과의원 평택치과...
+  서울탑플란트치과의원 평택치과...
+  365이룩치과의원치과...
+  송탄바른치과의원치과...
+  Final lineup: 고덕퍼스트치과의원 > 화이트라인치과의원 평택 > 서울탑플란트치과의원 평택 > 365이룩치과의원 > 송탄바른치과의원
+[Generate] Korean article...
+  Title: 평택 충치치료 치과 추천 5곳 완벽 비교, 실제 리뷰 3842건 분석 결과
+  Saved: dental-pyeongtaek-cavity-ko
+[Translate] 12 languages in parallel...
+  ok pt-BR
+  ok zh-CN
+  ok es-MX
+  ok en
+  ok de
+  ok ru
+  ok vi
+  ok ja
+  ok zh-TW
+  ok es
+  ok it
+  ok th
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-cavity
+
+============================================================
+[Publish] 평택고덕 치과 (dental-pyeongtaek-godeok)
+============================================================
+[Scrape] Naver search: "평택고덕 치과"
+  Found 5 places: 365래온치과병원, 고덕키즈앤탑치과의원, 고덕이래치과의원, 365이룩치과의원, 연세고덕에스치과의원 평택
+  365래온치과병원...
+  고덕키즈앤탑치과의원...
+  고덕이래치과의원...
+  365이룩치과의원...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 고덕키즈앤탑치과의원 > 고덕이래치과의원 > 365이룩치과의원
+[Generate] Korean article...
+  Title: 평택고덕 치과 추천 5곳 비교분석, 리뷰 2400건 실제 데이터로 확인
+  Saved: dental-pyeongtaek-godeok-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok pt-BR
+  ok es-MX
+  ok zh-CN
+  ok ru
+  ok es
+  ok zh-TW
+  ok de
+  ok it
+  ok vi
+  ok ja
+  ok th
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok
+
+============================================================
+[Publish] 평택고덕 임플란트 치과 (dental-pyeongtaek-godeok-implant)
+============================================================
+[Scrape] Naver search: "평택고덕 임플란트 치과"
+  Found 5 places: 365래온치과병원치과, 연세고덕에스치과의원 평택치과, 고덕프라임치과의원치과, 삼성스마트치과의원 평택고덕치과, 고덕퍼스트치과의원치과
+  365래온치과병원치과...
+  연세고덕에스치과의원 평택치과...
+  고덕프라임치과의원치과...
+  삼성스마트치과의원 평택고덕치과...
+  Final lineup: 고덕퍼스트치과의원 > 365래온치과병원 > 연세고덕에스치과의원 평택 > 고덕프라임치과의원 > 삼성스마트치과의원 평택고덕
+[Generate] Korean article...
+  Title: 평택고덕 임플란트 치과 추천 5곳 비교, 실제 리뷰 3,363건 분석 결과
+  Saved: dental-pyeongtaek-godeok-implant-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok ru
+  ok es-MX
+  ok de
+  ok pt-BR
+  ok ja
+  ok zh-TW
+  ok it
+  ok zh-CN
+  ok vi
+  ok th
+  ok es
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok-implant
+
+============================================================
+[Publish] 평택고덕 치아교정 치과 (dental-pyeongtaek-godeok-orthodontics)
+============================================================
+[Scrape] Naver search: "평택고덕 치아교정 치과"
+  Found 5 places: 고덕키즈앤탑치과의원치과, 연세고덕에스치과의원 평택치과, 서울클리어치과교정과치과의원 평택고덕치과, 느낌이있는필치과의원치과, 송탄사과나무치과의원치과
+  고덕키즈앤탑치과의원치과...
+  연세고덕에스치과의원 평택치과...
+  서울클리어치과교정과치과의원 평택고덕치과...
+  느낌이있는필치과의원치과...
+  Final lineup: 고덕퍼스트치과의원 > 고덕키즈앤탑치과의원 > 연세고덕에스치과의원 평택 > 서울클리어치과교정과치과의원 평택고덕 > 느낌이있는필치과의원
+[Generate] Korean article...
+  Title: 평택고덕 치아교정 치과 5곳 비교분석 후기 총정리 2026년판
+  Saved: dental-pyeongtaek-godeok-orthodontics-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok ru
+  ok zh-CN
+  ok pt-BR
+  ok it
+  ok zh-TW
+  ok es
+  ok vi
+  ok es-MX
+  ok ja
+  ok de
+  ok th
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok-orthodontics
+
+============================================================
+[Publish] 평택고덕 전체임플란트 치과 (dental-pyeongtaek-godeok-full-implant)
+============================================================
+[Scrape] Naver search: "평택고덕 전체임플란트 치과"
+  Found 1 places: 이플란트치과의원 평택치과
+  이플란트치과의원 평택치과...
+  Final lineup: 고덕퍼스트치과의원 > 이플란트치과의원 평택
+[Generate] Korean article...
+  Title: 평택고덕 전체임플란트 치과 추천 2곳 비교, 리뷰 656건 분석 결과 (2026)
+  Saved: dental-pyeongtaek-godeok-full-implant-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok zh-TW
+  ok es
+  ok vi
+  ok zh-CN
+  ok pt-BR
+  ok es-MX
+  ok ja
+  ok ru
+  ok de
+  ok th
+  ok it
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok-full-implant
+
+============================================================
+[Publish] 평택고덕 사랑니발치 치과 (dental-pyeongtaek-godeok-wisdom-tooth)
+============================================================
+[Scrape] Naver search: "평택고덕 사랑니발치 치과"
+  Found 5 places: 고덕애플치과의원치과, 365이룩치과의원치과, 나의인생치과의원 평택고덕치과, 고덕키즈앤탑치과의원치과, 고덕퍼스트치과의원치과
+  고덕애플치과의원치과...
+  365이룩치과의원치과...
+  나의인생치과의원 평택고덕치과...
+  고덕키즈앤탑치과의원치과...
+  Final lineup: 고덕퍼스트치과의원 > 고덕애플치과의원 > 365이룩치과의원 > 나의인생치과의원 평택고덕 > 고덕키즈앤탑치과의원
+[Generate] Korean article...
+  Title: 평택고덕 사랑니발치 치과 5곳 비교, 리뷰 3585건 분석 후 내린 결론 (2026)
+  Saved: dental-pyeongtaek-godeok-wisdom-tooth-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok ru
+  ok zh-CN
+  ok pt-BR
+  ok vi
+  ok es-MX
+  ok zh-TW
+  ok de
+  ok th
+  ok ja
+  ok it
+  ok es
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok-wisdom-tooth
+
+============================================================
+[Publish] 평택고덕 충치치료 치과 (dental-pyeongtaek-godeok-cavity)
+============================================================
+[Scrape] Naver search: "평택고덕 충치치료 치과"
+  Found 5 places: 365이룩치과의원치과, 고덕키즈앤탑치과의원치과, 서울매일치과의원치과, 고덕퍼스트치과의원치과, 고덕애플치과의원치과
+  365이룩치과의원치과...
+  고덕키즈앤탑치과의원치과...
+  서울매일치과의원치과...
+  고덕애플치과의원치과...
+  Batch GPT matching for 1 hospitals...
+  Final lineup: 고덕퍼스트치과의원 > 365이룩치과의원 > 고덕키즈앤탑치과의원 > 서울매일치과의원 > 고덕애플치과의원
+[Generate] Korean article...
+  Title: 평택고덕 충치치료 치과 5곳 비교 분석, 리뷰 1,367건으로 확인한 진짜 후기
+  Saved: dental-pyeongtaek-godeok-cavity-ko
+[Translate] 12 languages in parallel...
+  ok en
+  ok es
+  ok es-MX
+  ok zh-CN
+  ok ru
+  ok zh-TW
+  ok de
+  ok ja
+  ok pt-BR
+  ok vi
+  ok th
+  ok it
+  Translations: 12 ok, 0 failed
+  Keyword doc updated: dental-pyeongtaek-godeok-cavity
+
+============================================================
+SUMMARY
+============================================================
+OK   dental-pyeongtaek-ko — "평택 치과 추천 5곳 완벽 비교 - 리뷰 5,748건 분석 결과 총정리 (2026)" (12/12 translations)
+OK   dental-pyeongtaek-implant-ko — "평택 임플란트 치과 추천 5곳 비교 분석, 리뷰 3900건 데이터로 확인한 결과" (12/12 translations)
+OK   dental-pyeongtaek-orthodontics-ko — "평택 치아교정 치과 5곳 완벽 비교, 411건 방문자 리뷰로 검증한 2026년 후기" (12/12 translations)
+OK   dental-pyeongtaek-full-implant-ko — "평택 전체임플란트 치과 추천 3곳 비교, 리뷰 1,116건 데이터 분석 결과" (12/12 translations)
+OK   dental-pyeongtaek-wisdom-tooth-ko — "평택 사랑니발치 치과 추천 5곳 완전 비교, 리뷰 2460건 분석 후기 총정리" (12/12 translations)
+OK   dental-pyeongtaek-cavity-ko — "평택 충치치료 치과 추천 5곳 완벽 비교, 실제 리뷰 3842건 분석 결과" (12/12 translations)
+OK   dental-pyeongtaek-godeok-ko — "평택고덕 치과 추천 5곳 비교분석, 리뷰 2400건 실제 데이터로 확인" (12/12 translations)
+OK   dental-pyeongtaek-godeok-implant-ko — "평택고덕 임플란트 치과 추천 5곳 비교, 실제 리뷰 3,363건 분석 결과" (12/12 translations)
+OK   dental-pyeongtaek-godeok-orthodontics-ko — "평택고덕 치아교정 치과 5곳 비교분석 후기 총정리 2026년판" (12/12 translations)
+OK   dental-pyeongtaek-godeok-full-implant-ko — "평택고덕 전체임플란트 치과 추천 2곳 비교, 리뷰 656건 분석 결과 (2026)" (12/12 translations)
+OK   dental-pyeongtaek-godeok-wisdom-tooth-ko — "평택고덕 사랑니발치 치과 5곳 비교, 리뷰 3585건 분석 후 내린 결론 (2026)" (12/12 translations)
+OK   dental-pyeongtaek-godeok-cavity-ko — "평택고덕 충치치료 치과 5곳 비교 분석, 리뷰 1,367건으로 확인한 진짜 후기" (12/12 translations)

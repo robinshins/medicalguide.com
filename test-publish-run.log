@@ -1,0 +1,58 @@
+[dotenv@17.3.1] injecting env (8) from .env.local -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Querying Firestore for next pending dermatology keyword...
+Found: "경기 피부과" (order: 0)
+
+Publishing 1 article (KO + 12 languages)...
+
+
+============================================================
+[Publish] 경기 피부과
+============================================================
+[1/6] Searching Naver...
+  Found 5 places (4.1s)
+[2/6] Getting hospital details (Naver + Kakao + Google parallel)...
+  블리비의원 부천점...
+    Kakao: "블리비의원 부천점피부과" - (1048건)
+    Google: 5 (0건)
+    Hours: OK | Specialists: OK
+  스노우의원 수원점...
+    Kakao: "스노우의원 수원점피부과" 5 (149건)
+    Hours: OK | Specialists: MISS
+  데이뷰의원 분당점...
+    Kakao: "데이뷰의원 분당점피부과" - (1249건)
+    Google: 4.7 (20건)
+    Hours: OK | Specialists: MISS
+  블리비의원 안양점...
+    Kakao: "블리비의원 안양점피부과" - (1630건)
+    Google: 5 (0건)
+    Hours: OK | Specialists: MISS
+  미올린의원 용인...
+    Kakao: "미올린의원 용인점피부과" - (672건)
+    Google: 5 (0건)
+    Hours: OK | Specialists: MISS
+  Total: 5 hospitals (74.9s)
+[4/6] Generating Korean article...
+  Title: 경기 피부과 추천 5곳 비교, 리뷰 6,464건 실제 분석 후기 (2026) (83.9s)
+[5/6] Saving Korean article...
+  Saved: dermatology-gyeonggi-ko
+[6/6] Translating to 12 languages in parallel...
+  ✓ zh-CN
+  ✓ en
+  ✓ ja
+  ✓ es
+  ✓ es-MX
+  ✓ de
+  ✓ zh-TW
+  ✓ pt-BR
+  ✓ ru
+  ✓ it
+  ✓ th
+  ✓ vi
+  Done: 12 ok, 0 failed (31.1s)
+
+============================================================
+SUCCESS
+Title: 경기 피부과 추천 5곳 비교, 리뷰 6,464건 실제 분석 후기 (2026)
+URL: /ko/dermatology/gyeonggi
+Total time: 201.8s
+============================================================
