@@ -506,14 +506,16 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 ===CONTENT===
 (HTML 본문)`;
 
-  const response = await anthropic.messages.create({
+  // stream() 필수: max_tokens가 크면 SDK가 비스트리밍 요청을 거부한다
+  // ("Streaming is required for operations that may take longer than 10 minutes").
+  const response = await anthropic.messages.stream({
     model: 'claude-sonnet-5',
     // 치과 러너에서 이 한도가 낮아 잘린 글이 다수 발행됐다. 여기는 stop_reason 검사가
     // 있어 발행은 막혔지만, 한도에 붙을 때마다 발행 1회가 통째로 버려지므로 같이 올린다.
     max_tokens: 24000,
     thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
-  });
+  }).finalMessage();
   if (response.stop_reason === 'max_tokens') {
     throw new Error(`Article truncated (max_tokens, output=${response.usage?.output_tokens})`);
   }
