@@ -19,7 +19,7 @@ function usageSummary() {
 }
 
 const puppeteer = require('puppeteer-core');
-const Anthropic = require('@anthropic-ai/sdk');
+// Anthropic SDK는 더 이상 쓰지 않는다 — 글 생성·번역·매칭이 전부 OpenAI로 통합됐다.
 const OpenAI = require('openai');
 const admin = require('firebase-admin');
 const fs = require('fs');
@@ -30,7 +30,6 @@ const serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'medicalk
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storageBucket: 'medicalkorea-2205a.firebasestorage.app' });
 const db = admin.firestore();
 require('dotenv').config({ path: '.env.local' });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -506,23 +505,35 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 ===CONTENT===
 (HTML 본문)`;
 
-  // stream() 필수: max_tokens가 크면 SDK가 비스트리밍 요청을 거부한다
-  // ("Streaming is required for operations that may take longer than 10 minutes").
-  const response = await anthropic.messages.stream({
-    model: 'claude-sonnet-5',
-    // claude-sonnet-5의 허용 최대는 128000. 실제 본문은 9~11K면 충분하지만, 이 값 때문에
-    // 발행이 실패하는 일이 없도록 6배 여유를 둔다. 미사용분은 과금되지 않으므로 비용 영향 없음.
-    max_tokens: 64000,
-    thinking: { type: 'disabled' },
-    messages: [{ role: 'user', content: prompt }],
-  }).finalMessage();
-  if (response.stop_reason === 'max_tokens') {
-    throw new Error(`Article truncated (max_tokens, output=${response.usage?.output_tokens})`);
+  // 글 생성도 gpt-5.4-mini. Claude를 쓰던 자리인데, 번역이 어차피 OpenAI라 한쪽으로
+  // 모으면 Anthropic 요금이 통째로 없어지고 OpenAI 무료 한도 안에 들어간다.
+  // 치과 러너는 Claude를 유지한다 — 신규 dental2 사이트가 같은 키워드·같은 병원 데이터로
+  // gpt-5.4-mini를 쓰고 있어서, 치과까지 옮기면 두 사이트의 본문이 닮을 위험이 커진다.
+  // 피부과는 경쟁하는 자매 사이트가 없어 그 제약이 없다.
+  //
+  // max_output_tokens에는 reasoning 토큰도 포함된다. 이 값 때문에 발행이 실패하지
+  // 않도록 크게 잡는다(미사용분은 과금되지 않음).
+  const response = await openaiClient.responses.create({
+    model: 'gpt-5.4-mini',
+    reasoning: { effort: 'low' },
+    max_output_tokens: 64000,
+    input: [
+      { role: 'developer', content: '당신은 10년 경력의 한국 의료 전문 에디터입니다. 피부과 분야를 담당합니다.' },
+      { role: 'user', content: prompt },
+    ],
+  });
+  recordUsage('article', response.usage);
+  if (response.status === 'incomplete') {
+    throw new Error(`Article incomplete: ${response.incomplete_details?.reason} (output=${response.usage?.output_tokens})`);
   }
-  const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  if (response.status && response.status !== 'completed') {
+    throw new Error(`Article status=${response.status}`);
+  }
+  const text = response.output_text || '';
   const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
   if (!m) throw new Error('Failed to parse article (markers not found)');
   const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
+  console.log(`  [gpt] status=${response.status} output_tokens=${response.usage?.output_tokens} content=${article.content.length}자`);
   assertArticleSane(article, keywordData);
   return article;
 }
