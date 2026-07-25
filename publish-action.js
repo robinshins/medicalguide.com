@@ -510,9 +510,9 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
   // ("Streaming is required for operations that may take longer than 10 minutes").
   const response = await anthropic.messages.stream({
     model: 'claude-sonnet-5',
-    // 치과 러너에서 이 한도가 낮아 잘린 글이 다수 발행됐다. 여기는 stop_reason 검사가
-    // 있어 발행은 막혔지만, 한도에 붙을 때마다 발행 1회가 통째로 버려지므로 같이 올린다.
-    max_tokens: 24000,
+    // claude-sonnet-5의 허용 최대는 128000. 실제 본문은 9~11K면 충분하지만, 이 값 때문에
+    // 발행이 실패하는 일이 없도록 6배 여유를 둔다. 미사용분은 과금되지 않으므로 비용 영향 없음.
+    max_tokens: 64000,
     thinking: { type: 'disabled' },
     messages: [{ role: 'user', content: prompt }],
   }).finalMessage();
