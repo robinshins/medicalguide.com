@@ -554,10 +554,20 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
   const text = response.output_text || '';
   const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
   if (!m) throw new Error('Failed to parse article (markers not found)');
-  const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: m[3].trim() };
+  const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: stripTrailingMarkers(m[3]) };
   console.log(`  [gpt] status=${response.status} output_tokens=${response.usage?.output_tokens} content=${article.content.length}자`);
   assertArticleSane(article, keywordData);
   return article;
+}
+
+// 모델이 본문 끝에 마커를 한 번 더 뱉는 경우가 있다(===CONTENT=== 중복).
+// 정규식은 첫 마커에서 본문을 시작해 끝까지 잡으므로 중복분이 본문 꼬리에 남고,
+// assertArticleSane의 "닫힌 블록 태그로 끝나야 한다"에 걸려 멀쩡한 글이 버려진다.
+function stripTrailingMarkers(s) {
+  let out = s.trim();
+  let prev;
+  do { prev = out; out = out.replace(/\s*===[A-Z]+===\s*$/, '').trim(); } while (out !== prev);
+  return out;
 }
 
 // 마커 파싱이 성공해도 본문이 짧거나 열린 태그로 끝나면 발행하지 않는다.
