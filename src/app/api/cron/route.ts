@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
   const urls: string[] = [];
 
   // Read pre-aggregated index docs (13 reads) instead of scanning the full articles collection (~117K reads).
+  // Only the head shard `{lang}_dermatology` is needed: it always holds the newest items, and we only look back 24h.
   const indexSnaps = await Promise.all(
     SUPPORTED_LANGUAGES.map(lang =>
       db.collection('articles_index').doc(`${lang}_dermatology`).get()

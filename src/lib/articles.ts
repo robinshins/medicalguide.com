@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { FieldPath } from 'firebase-admin/firestore';
 import { db } from './firebase';
 import type { Article, ArticlesIndex, ArticleSummary } from './types';
 import { SUPPORTED_LANGUAGES } from './i18n';
@@ -15,11 +16,19 @@ const ALLOWED_CATEGORY = 'dermatology';
 // Re-export for existing callers that import ArticleSummary from this module.
 export type { ArticleSummary } from './types';
 
+// The index is sharded: `{lang}_{category}` (head, newest items) plus `{lang}_{category}_a1..aN`
+// archive shards holding older items (see upsertArticlesIndex in ./publish.ts). One prefix query
+// fetches all of them; merge and sort here. Returns null only when no index doc exists at all.
 async function readIndex(lang: string, category: string): Promise<ArticleSummary[] | null> {
-  const snap = await db.collection(INDEX_COLLECTION).doc(`${lang}_${category}`).get();
-  if (!snap.exists) return null;
-  const data = snap.data() as ArticlesIndex | undefined;
-  return data?.items ?? [];
+  const prefix = `${lang}_${category}`;
+  const snap = await db.collection(INDEX_COLLECTION)
+    .where(FieldPath.documentId(), '>=', prefix)
+    .where(FieldPath.documentId(), '<', prefix + '')
+    .get();
+  if (snap.empty) return null;
+  const items = snap.docs.flatMap(d => (d.data() as ArticlesIndex | undefined)?.items ?? []);
+  items.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  return items;
 }
 
 // Legacy fallback: full-scan by lang (+category), used only when no index doc exists.

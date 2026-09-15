@@ -590,6 +590,24 @@ function assertArticleSane(a, keywordData) {
 // ============================================================
 const INDEX_COLLECTION = 'articles_index';
 const INDEX_DOC_SIZE_WARN = 800_000; // warn when approaching 1MB Firestore limit
+// Max summaries per index doc. Thai summaries run ~900B each, so 400 items is ~360KB —
+// well under Firestore's 1,048,576-byte document limit even if summaries double in size.
+const INDEX_SHARD_MAX_ITEMS = 400;
+
+// Sharded layout (keep in sync with src/lib/publish.ts, src/lib/articles.ts, scripts/build-articles-index.js):
+//   articles_index/{lang}_{category}      "head": the newest <= INDEX_SHARD_MAX_ITEMS summaries
+//   articles_index/{lang}_{category}_a1   archive shard 1 (oldest)
+//   articles_index/{lang}_{category}_aN   archive shard N (newest of the archive; receives head overflow)
+// Readers merge every doc whose id starts with `{lang}_{category}` and sort by publishedAt desc.
+function indexHeadId(lang, category) { return `${lang}_${category}`; }
+function indexShardNo(headId, docId) { return docId === headId ? 0 : parseInt(docId.slice(headId.length + 2), 10) || 0; }
+function indexShardQuery(lang, category) {
+  const prefix = indexHeadId(lang, category);
+  return db.collection(INDEX_COLLECTION)
+    .where(admin.firestore.FieldPath.documentId(), '>=', prefix)
+    .where(admin.firestore.FieldPath.documentId(), '<', prefix + '');
+}
+const byPublishedDesc = (a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '');
 
 function toArticleSummary(doc) {
   return {
@@ -605,24 +623,49 @@ function toArticleSummary(doc) {
 }
 
 async function upsertArticlesIndex(lang, category, summary) {
-  const ref = db.collection(INDEX_COLLECTION).doc(`${lang}_${category}`);
+  const headId = indexHeadId(lang, category);
   await db.runTransaction(async tx => {
-    const snap = await tx.get(ref);
-    const existing = snap.exists ? (snap.data().items || []) : [];
-    const filtered = existing.filter(x => x.id !== summary.id);
-    filtered.unshift(summary);
-    filtered.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
-    const payload = {
-      lang,
-      category,
-      items: filtered,
-      updatedAt: new Date().toISOString(),
-      count: filtered.length,
-    };
-    tx.set(ref, payload);
-    const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
-    if (approxBytes > INDEX_DOC_SIZE_WARN) {
-      console.warn(`[Index] articles_index/${lang}_${category} ~${(approxBytes / 1024).toFixed(1)}KB (count=${filtered.length}) - approaching 1MB limit; consider sharding by specialty`);
+    // One transactional read of head + every archive shard (a handful of docs).
+    const snap = await tx.get(indexShardQuery(lang, category));
+    const shards = new Map(snap.docs.map(d => [d.id, d.data().items || []]));
+    const changed = new Set();
+
+    // 1. Remove any previous entry for this article, wherever it lives (re-publish case).
+    for (const [id, items] of shards) {
+      const kept = items.filter(x => x.id !== summary.id);
+      if (kept.length !== items.length) { shards.set(id, kept); changed.add(id); }
+    }
+
+    // 2. Insert into head.
+    const head = [summary, ...(shards.get(headId) || [])].sort(byPublishedDesc);
+    shards.set(headId, head);
+    changed.add(headId);
+
+    // 3. Overflow the oldest head entries into the newest archive shard (or a new one).
+    if (head.length > INDEX_SHARD_MAX_ITEMS) {
+      const overflow = head.splice(INDEX_SHARD_MAX_ITEMS);
+      const archiveIds = [...shards.keys()].filter(id => id !== headId)
+        .sort((a, b) => indexShardNo(headId, a) - indexShardNo(headId, b));
+      let targetId = archiveIds[archiveIds.length - 1];
+      if (!targetId || shards.get(targetId).length >= INDEX_SHARD_MAX_ITEMS) {
+        targetId = `${headId}_a${archiveIds.length + 1}`;
+        shards.set(targetId, []);
+      }
+      shards.set(targetId, [...overflow, ...shards.get(targetId)].sort(byPublishedDesc));
+      changed.add(targetId);
+    }
+
+    // 4. Write only the docs that changed.
+    const now = new Date().toISOString();
+    const totalCount = [...shards.values()].reduce((n, items) => n + items.length, 0);
+    for (const id of changed) {
+      const items = shards.get(id);
+      const payload = { lang, category, shard: indexShardNo(headId, id), items, count: items.length, totalCount, updatedAt: now };
+      tx.set(db.collection(INDEX_COLLECTION).doc(id), payload);
+      const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+      if (approxBytes > INDEX_DOC_SIZE_WARN) {
+        console.warn(`[Index] articles_index/${id} ~${(approxBytes / 1024).toFixed(1)}KB (count=${items.length}) - approaching 1MB limit; lower INDEX_SHARD_MAX_ITEMS`);
+      }
     }
   });
 }
@@ -850,8 +893,17 @@ async function publishOneArticle(keywordData) {
     const t7 = Date.now();
     const allDocs = [koDoc, ...translatedDocs];
     console.log(`[Index] Upserting articles_index for ${allDocs.length} languages...`);
-    await Promise.all(allDocs.map(d => upsertArticlesIndex(d.lang, d.category, toArticleSummary(d))));
-    console.log(`  Index updated (${((Date.now() - t7) / 1000).toFixed(1)}s)`);
+    // Non-fatal: the articles are already saved. An index failure must not mark the keyword
+    // failed (that happened for 3 weeks when th_dermatology crossed Firestore's 1MB limit).
+    // Recover with `node scripts/build-articles-index.js`.
+    const indexResults = await Promise.allSettled(allDocs.map(d => upsertArticlesIndex(d.lang, d.category, toArticleSummary(d))));
+    const indexFailed = indexResults.filter(r => r.status === 'rejected');
+    if (indexFailed.length > 0) {
+      console.error(`  Index update failed for ${indexFailed.length}/${allDocs.length} languages (articles still saved):`);
+      indexFailed.forEach(r => console.error(`    ${r.reason && r.reason.message ? r.reason.message : r.reason}`));
+    } else {
+      console.log(`  Index updated (${((Date.now() - t7) / 1000).toFixed(1)}s)`);
+    }
 
     await db.collection('keywords_beauty').doc(keywordId).set({ ...keywordData, status: 'published', publishedAt: now });
     return koDoc;

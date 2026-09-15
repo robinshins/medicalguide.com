@@ -72,10 +72,14 @@ export type ArticleSummary = Pick<
   'id' | 'slug' | 'title' | 'metaDescription' | 'publishedAt' | 'category' | 'specialty' | 'lang'
 >;
 
+// One doc of the sharded articles_index: `{lang}_{category}` (shard 0, newest items) or
+// `{lang}_{category}_aN` (archive shard N). `count` is this doc's items; `totalCount` spans all shards.
 export interface ArticlesIndex {
   lang: string;
   category: 'dental' | 'dermatology';
   items: ArticleSummary[];
   updatedAt: string;
   count: number;
+  shard?: number;
+  totalCount?: number;
 }

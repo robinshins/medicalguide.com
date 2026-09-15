@@ -1,3 +1,4 @@
+import { FieldPath } from 'firebase-admin/firestore';
 import { db } from './firebase';
 import type { KeywordEntry, Article, ArticleSummary } from './types';
 
@@ -5,6 +6,27 @@ const KEYWORDS_COLLECTION = 'keywords_beauty';
 const ARTICLES_COLLECTION = 'articles';
 const INDEX_COLLECTION = 'articles_index';
 const INDEX_DOC_SIZE_WARN = 800_000; // warn when approaching 1MB Firestore limit
+// Max summaries per index doc. Thai summaries run ~900B each, so 400 items is ~360KB —
+// well under Firestore's 1,048,576-byte document limit even if summaries double in size.
+const INDEX_SHARD_MAX_ITEMS = 400;
+
+// Sharded layout (keep in sync with publish-action.js, ./articles.ts, scripts/build-articles-index.js):
+//   articles_index/{lang}_{category}      "head": the newest <= INDEX_SHARD_MAX_ITEMS summaries
+//   articles_index/{lang}_{category}_a1   archive shard 1 (oldest)
+//   articles_index/{lang}_{category}_aN   archive shard N (newest of the archive; receives head overflow)
+// Readers merge every doc whose id starts with `{lang}_{category}` and sort by publishedAt desc.
+function indexHeadId(lang: string, category: string): string { return `${lang}_${category}`; }
+function indexShardNo(headId: string, docId: string): number {
+  return docId === headId ? 0 : parseInt(docId.slice(headId.length + 2), 10) || 0;
+}
+function indexShardQuery(lang: string, category: string): FirebaseFirestore.Query {
+  const prefix = indexHeadId(lang, category);
+  return db.collection(INDEX_COLLECTION)
+    .where(FieldPath.documentId(), '>=', prefix)
+    .where(FieldPath.documentId(), '<', prefix + '');
+}
+const byPublishedDesc = (a: ArticleSummary, b: ArticleSummary) =>
+  (b.publishedAt || '').localeCompare(a.publishedAt || '');
 
 function toArticleSummary(article: Article): ArticleSummary {
   return {
@@ -20,24 +42,51 @@ function toArticleSummary(article: Article): ArticleSummary {
 }
 
 async function upsertArticlesIndex(lang: string, category: string, summary: ArticleSummary): Promise<void> {
-  const ref = db.collection(INDEX_COLLECTION).doc(`${lang}_${category}`);
+  const headId = indexHeadId(lang, category);
   await db.runTransaction(async tx => {
-    const snap = await tx.get(ref);
-    const existing: ArticleSummary[] = snap.exists ? ((snap.data()?.items as ArticleSummary[]) || []) : [];
-    const filtered = existing.filter(x => x.id !== summary.id);
-    filtered.unshift(summary);
-    filtered.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
-    const payload = {
-      lang,
-      category,
-      items: filtered,
-      updatedAt: new Date().toISOString(),
-      count: filtered.length,
-    };
-    tx.set(ref, payload);
-    const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
-    if (approxBytes > INDEX_DOC_SIZE_WARN) {
-      console.warn(`[Index] articles_index/${lang}_${category} ~${(approxBytes / 1024).toFixed(1)}KB (count=${filtered.length}) - approaching 1MB limit; consider sharding by specialty`);
+    // One transactional read of head + every archive shard (a handful of docs).
+    const snap = await tx.get(indexShardQuery(lang, category));
+    const shards = new Map<string, ArticleSummary[]>(
+      snap.docs.map(d => [d.id, (d.data().items as ArticleSummary[]) || []])
+    );
+    const changed = new Set<string>();
+
+    // 1. Remove any previous entry for this article, wherever it lives (re-publish case).
+    for (const [id, items] of shards) {
+      const kept = items.filter(x => x.id !== summary.id);
+      if (kept.length !== items.length) { shards.set(id, kept); changed.add(id); }
+    }
+
+    // 2. Insert into head.
+    const head = [summary, ...(shards.get(headId) || [])].sort(byPublishedDesc);
+    shards.set(headId, head);
+    changed.add(headId);
+
+    // 3. Overflow the oldest head entries into the newest archive shard (or a new one).
+    if (head.length > INDEX_SHARD_MAX_ITEMS) {
+      const overflow = head.splice(INDEX_SHARD_MAX_ITEMS);
+      const archiveIds = [...shards.keys()].filter(id => id !== headId)
+        .sort((a, b) => indexShardNo(headId, a) - indexShardNo(headId, b));
+      let targetId = archiveIds[archiveIds.length - 1];
+      if (!targetId || (shards.get(targetId) || []).length >= INDEX_SHARD_MAX_ITEMS) {
+        targetId = `${headId}_a${archiveIds.length + 1}`;
+        shards.set(targetId, []);
+      }
+      shards.set(targetId, [...overflow, ...(shards.get(targetId) || [])].sort(byPublishedDesc));
+      changed.add(targetId);
+    }
+
+    // 4. Write only the docs that changed.
+    const now = new Date().toISOString();
+    const totalCount = [...shards.values()].reduce((n, items) => n + items.length, 0);
+    for (const id of changed) {
+      const items = shards.get(id) || [];
+      const payload = { lang, category, shard: indexShardNo(headId, id), items, count: items.length, totalCount, updatedAt: now };
+      tx.set(db.collection(INDEX_COLLECTION).doc(id), payload);
+      const approxBytes = Buffer.byteLength(JSON.stringify(payload), 'utf8');
+      if (approxBytes > INDEX_DOC_SIZE_WARN) {
+        console.warn(`[Index] articles_index/${id} ~${(approxBytes / 1024).toFixed(1)}KB (count=${items.length}) - approaching 1MB limit; lower INDEX_SHARD_MAX_ITEMS`);
+      }
     }
   });
 }

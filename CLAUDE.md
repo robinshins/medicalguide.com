@@ -57,6 +57,30 @@ Routes follow `[lang]/[category]/[slug]` pattern supporting 13 languages. Articl
 - **Logo/favicon**: `/img/shape-16.png`
 - **Site name**: "Korea Beauty Guide" (all languages)
 
+### `articles_index` (pre-aggregated list index, sharded)
+
+Firestore docs are capped at 1MB. A single `{lang}_dermatology` doc crossed that line at ~1,165
+Thai summaries (2026-08-22) and every publish run failed at the index step for three weeks, so the
+index is sharded:
+
+| Doc id | Contents |
+|---|---|
+| `articles_index/{lang}_dermatology` | head: newest <= 400 summaries (`INDEX_SHARD_MAX_ITEMS`) |
+| `articles_index/{lang}_dermatology_a1` | archive shard 1 (oldest) |
+| `articles_index/{lang}_dermatology_aN` | archive shard N (newest of the archive; receives head overflow) |
+
+- Writers: `upsertArticlesIndex()` in `publish-action.js` and `src/lib/publish.ts` (keep identical).
+  One transaction reads every shard by id-prefix, dedupes, inserts into head, overflows the oldest
+  head items into shard N (or creates N+1). Index failures are non-fatal: the articles are already
+  saved, so a failure must never mark the keyword `failed`.
+- Readers: `readIndex()` in `src/lib/articles.ts` merges all docs with the `{lang}_dermatology`
+  prefix and sorts by `publishedAt`. `/api/cron` (IndexNow) reads only the head, which is enough
+  for a 24h lookback.
+- `node scripts/build-articles-index.js` rebuilds every shard from `articles` and deletes stale
+  shards. Run it after an index failure or a layout change.
+- `node scripts/fix-orphaned-keywords.js [--apply]` sets `keywords_beauty` docs stuck in
+  `failed`/`in_progress` back to `published` when their Korean article exists.
+
 ### Environment Variables
 
 Required: `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PROJECT_ID`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `CRON_SECRET`
