@@ -53,6 +53,15 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storage
 const db = admin.firestore();
 require('dotenv').config({ path: '.env.local' });
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// DeepSeek는 OpenAI 호환 엔드포인트(번역용). 키가 없으면 SDK가 OPENAI_API_KEY로 조용히
+// 폴백해 원인 모를 401이 나므로 자리표시자를 넣어 DeepSeek 쪽 인증 오류로 드러나게 한다.
+const deepseekClient = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY || 'missing-DEEPSEEK_API_KEY',
+  baseURL: 'https://api.deepseek.com', timeout: 10 * 60 * 1000, maxRetries: 0,
+});
+// 번역 모델. 2026-09-24에 gpt-5.4-mini → deepseek-flash(DeepSeek-V4.1-Flash). 자매
+// 사이트들과 같은 선택이며 출력 단가가 1/16. thinking은 끄고 json_object 모드로 받는다.
+const TRANSLATION_MODEL = 'deepseek-flash';
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
@@ -527,16 +536,13 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 ===CONTENT===
 (HTML 본문)`;
 
-  // 글 생성도 gpt-5.4-mini. Claude를 쓰던 자리인데, 번역이 어차피 OpenAI라 한쪽으로
-  // 모으면 Anthropic 요금이 통째로 없어지고 OpenAI 무료 한도 안에 들어간다.
-  // 치과 러너는 Claude를 유지한다 — 신규 dental2 사이트가 같은 키워드·같은 병원 데이터로
-  // gpt-5.4-mini를 쓰고 있어서, 치과까지 옮기면 두 사이트의 본문이 닮을 위험이 커진다.
-  // 피부과는 경쟁하는 자매 사이트가 없어 그 제약이 없다.
+  // 글 생성은 OpenAI Responses API. 2026-09-24에 gpt-5.4-mini → gpt-6-luna로 교체
+  // (모든 사이트 통일). luna는 temperature를 지원하지 않는다.
   //
   // max_output_tokens에는 reasoning 토큰도 포함된다. 이 값 때문에 발행이 실패하지
   // 않도록 크게 잡는다(미사용분은 과금되지 않음).
   const response = await openaiClient.responses.create({
-    model: 'gpt-5.4-mini',
+    model: 'gpt-6-luna',
     reasoning: { effort: 'low' },
     max_output_tokens: 64000,
     input: [
@@ -848,12 +854,16 @@ async function publishOneArticle(keywordData) {
       const prompt = buildTranslationPrompt({ lang, langName, region, category, koArticle });
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const response = await openaiClient.responses.create({
-            model: 'gpt-5.4-mini',
-            input: [{ role: 'user', content: prompt }],
+          const response = await deepseekClient.chat.completions.create({
+            model: TRANSLATION_MODEL,
+            thinking: { type: 'disabled' },
+            response_format: { type: 'json_object' },
+            max_tokens: 64000,
+            messages: [{ role: 'user', content: prompt }],
           });
           recordUsage('translate', response.usage);
-          const text = response.output_text;
+          if (response.choices[0].finish_reason === 'length') throw new Error('Translation truncated (finish_reason=length)');
+          const text = response.choices[0].message.content || '';
           const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"content"[\s\S]*\}/);
           if (!jsonMatch) throw new Error('Parse failed');
           const translated = JSON.parse(jsonMatch[0]);
