@@ -587,7 +587,7 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
   const text = response.output_text || '';
   const m = text.match(/===TITLE===\s*([\s\S]*?)\s*===META===\s*([\s\S]*?)\s*===CONTENT===\s*([\s\S]*?)\s*$/);
   if (!m) throw new Error('Failed to parse article (markers not found)');
-  const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: stripTrailingMarkers(m[3]) };
+  const article = { title: m[1].trim(), metaDescription: m[2].trim(), content: sanitizeHtml(stripTrailingMarkers(m[3])).trim() };
   console.log(`  [gpt] status=${response.status} output_tokens=${response.usage?.output_tokens} content=${article.content.length}자`);
   assertArticleSane(article, keywordData);
   return article;
@@ -601,6 +601,20 @@ function stripTrailingMarkers(s) {
   let prev;
   do { prev = out; out = out.replace(/\s*===[A-Z]+===\s*$/, '').trim(); } while (out !== prev);
   return out;
+}
+
+// 허용 태그 밖의 마크업을 제거한다. 태그만 벗기고 안의 텍스트는 남긴다.
+//
+// 2026-10-02: gpt-6-luna가 본문 전체를 <article>...</article>로 감싸 보냈고, 글은 온전했지만
+// 마지막 태그가 </article>이라 assertArticleSane이 잘린 글로 오판해 발행이 실패했다
+// (송파구 써마지 피부과). 모델을 바꿀 때마다 태그 어휘가 조금씩 흔들리므로, 검증·저장 전에
+// 한 번 정리해 사이트 CSS와 FAQ 스키마가 같은 태그만 보게 한다. medicalkoreaguide의
+// publish-action.js와 같은 목록을 쓴다.
+const ALLOWED_TAGS = new Set(['h2','h3','p','ul','ol','li','table','thead','tbody','tr','th','td','blockquote','strong']);
+function sanitizeHtml(html) {
+  return (html || '').replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (tag, name) =>
+    ALLOWED_TAGS.has(name.toLowerCase()) ? tag : ''
+  );
 }
 
 // 마커 파싱이 성공해도 본문이 짧거나 열린 태그로 끝나면 발행하지 않는다.
