@@ -65,6 +65,7 @@ const TRANSLATION_MODEL = 'deepseek-flash';
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
+const { getTimelessPromotion, scrapePromotedFirst, pinPromotedFirst } = require('./src/lib/timeless-pin');
 
 // 번역문에 넣을 언어별 "외국인 환자 관점" 표현.
 //
@@ -477,7 +478,7 @@ async function searchGoogle(browser, hospitalName, region) {
 }
 
 // --- Article Generator ---
-async function generateArticle(keywordData, hospitals) {
+async function generateArticle(keywordData, hospitals, promotedAdvantages) {
   const totalNaverReviews = hospitals.reduce((s, h) => s + h.naverReviewCount, 0);
   const totalKakaoReviews = hospitals.reduce((s, h) => s + h.kakaoReviewCount, 0);
   const avgKakaoRating = hospitals.filter(h => h.kakaoRating).length > 0
@@ -507,12 +508,14 @@ async function generateArticle(keywordData, hospitals) {
 + AI 검색(ChatGPT, Perplexity)에서 "${keywordData.region}에서 ${isSpecialty ? keywordData.specialty + ' ' : ''}${categoryKo} 어디가 좋아?" 질문 대응
 
 ## 병원 데이터
-${hospitalContext}${dentalPriceContext}
+${hospitalContext}${dentalPriceContext}${promotedAdvantages ? `\n\n${promotedAdvantages}` : ''}
 
 ## 글 구조 (HTML, 반드시 이 순서)
 
 ### 1) 핵심 결과 먼저 (h2)
-첫 문단에서 바로 결론. 가장 평점 높거나 리뷰 많은 1-2곳을 구체적 수치와 함께 먼저 언급.
+${promotedAdvantages
+  ? '첫 문단에서 바로 결론. 병원 데이터 1번 병원을 평점·리뷰 수와 관계없이 가장 먼저, 가장 비중 있게 언급한다. 상세 분석의 첫 h3와 비교표 첫 행도 그 병원이다.'
+  : '첫 문단에서 바로 결론. 가장 평점 높거나 리뷰 많은 1-2곳을 구체적 수치와 함께 먼저 언급.'}
 
 ### 2) 분석 방법 투명 공개 (h2)
 구체적 숫자와 방법론 투명 공개.
@@ -739,7 +742,8 @@ async function publishOneArticle(keywordData) {
     console.log('[1/6] Searching Naver...');
     const naverPlaces = await searchNaver(browser, keyword);
     console.log(`  Found ${naverPlaces.length} places (${((Date.now() - t1) / 1000).toFixed(1)}s)`);
-    if (naverPlaces.length === 0) { await browser.close(); return null; }
+    const promoted = getTimelessPromotion(keywordData);
+    if (naverPlaces.length === 0 && !promoted) { await browser.close(); return null; }
 
     // 2-3. Get details for each hospital + Kakao/Google in parallel per hospital
     const t2 = Date.now();
@@ -838,6 +842,11 @@ async function publishOneArticle(keywordData) {
       }
     }
 
+    let promotedAdvantages = '';
+    if (promoted) {
+      promotedAdvantages = await scrapePromotedFirst(browser, hospitals, promoted, { getPlaceInfo, searchKakao, searchGoogle });
+    }
+
     console.log(`  Total: ${hospitals.length} hospitals (${((Date.now() - t2) / 1000).toFixed(1)}s)`);
 
     // Close browser - done with scraping
@@ -848,7 +857,7 @@ async function publishOneArticle(keywordData) {
     // 4. Generate Korean article
     const t4 = Date.now();
     console.log('[4/6] Generating Korean article...');
-    const koArticle = await generateArticle(keywordData, cleanDeep(hospitals));
+    const koArticle = await generateArticle(keywordData, cleanDeep(hospitals), promotedAdvantages);
     console.log(`  Title: ${koArticle.title} (${((Date.now() - t4) / 1000).toFixed(1)}s)`);
 
     const slug = specialtySlug === 'general' ? regionSlug : `${regionSlug}-${specialtySlug}`;
@@ -870,7 +879,7 @@ async function publishOneArticle(keywordData) {
     const koDoc = {
       id: `${category}-${slug}-ko`, keywordId, keyword, lang: 'ko', slug, category,
       title: koArticle.title, metaDescription: koArticle.metaDescription,
-      content: koArticle.content, hospitals: hospitalsSummary,
+      content: koArticle.content, hospitals: pinPromotedFirst(hospitalsSummary, promoted),
       publishedAt: now, region, specialty: specialty || '일반',
     };
     await db.collection('articles').doc(koDoc.id).set(koDoc);
