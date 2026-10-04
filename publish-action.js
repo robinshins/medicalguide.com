@@ -211,6 +211,10 @@ async function searchNaver(browser, query) {
   await page.setUserAgent(UA);
   await page.goto(`https://m.search.naver.com/search.naver?query=${encodeURIComponent(query)}&where=place`, { waitUntil: 'networkidle2', timeout: 30000 });
   await delay(1500);
+  for (let s = 0; s < 3; s++) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await delay(400);
+  }
   const places = await page.evaluate(() => {
     const root = document.querySelector('#place-app-root');
     if (!root) return [];
@@ -230,7 +234,7 @@ async function searchNaver(browser, query) {
       seen.add(match[1]);
       results.push({ id: match[1], name });
     }
-    return results.slice(0, 5);
+    return results.slice(0, 15);
   });
   await page.close();
   return places;
@@ -720,6 +724,47 @@ async function upsertArticlesIndex(lang, category, summary) {
   });
 }
 
+function pickRecommended(pool, specialty, siblingTopIds) {
+  const token = specialty && specialty !== '일반' ? specialty : '';
+  const hasAlternative = pool.some(h => !siblingTopIds.has(h.id));
+  return pool
+    .map((h, index) => {
+      const text = `${h.name} ${h.category || ''} ${h.specialistsInfo || ''}`;
+      return {
+        h,
+        index,
+        pushed: hasAlternative && siblingTopIds.has(h.id) ? 1 : 0,
+        specialtyMatch: token && text.includes(token) ? 0 : 1,
+      };
+    })
+    .sort((a, b) => a.pushed - b.pushed || a.specialtyMatch - b.specialtyMatch || a.index - b.index)
+    .slice(0, 5)
+    .map(row => row.h);
+}
+
+async function siblingTopIds(collection, region, specialty, category) {
+  try {
+    const snap = await db.collection(collection)
+      .where('region', '==', region)
+      .select('specialty', 'hospitals', 'lang', 'category')
+      .get();
+    const ids = new Set();
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      if (data.lang && data.lang !== 'ko') continue;
+      if (category && data.category && data.category !== category) continue;
+      if ((data.specialty || '일반') === (specialty || '일반') || !Array.isArray(data.hospitals)) continue;
+      for (const h of data.hospitals.slice(0, 3)) {
+        if (h?.id) ids.add(String(h.id));
+      }
+    }
+    return ids;
+  } catch (e) {
+    console.log(`  [rank] sibling lookup failed: ${e.message}`);
+    return new Set();
+  }
+}
+
 // ============================================================
 // FULL PIPELINE - SINGLE BROWSER INSTANCE
 // ============================================================
@@ -742,15 +787,33 @@ async function publishOneArticle(keywordData) {
     console.log('[1/6] Searching Naver...');
     const naverPlaces = await searchNaver(browser, keyword);
     console.log(`  Found ${naverPlaces.length} places (${((Date.now() - t1) / 1000).toFixed(1)}s)`);
+    const queue = [];
+    const seenIds = new Set();
+    const enqueue = (list) => {
+      for (const p of list) {
+        if (seenIds.has(p.id) || queue.length >= 15) continue;
+        seenIds.add(p.id);
+        queue.push(p);
+      }
+    };
+    enqueue(naverPlaces);
+    if (queue.length < 3 && specialty && specialty !== '일반') {
+      const fallbackQuery = `${region} 피부과`;
+      if (fallbackQuery !== keyword) {
+        console.log(`  [rank] search ${queue.length} < 3, fallback "${fallbackQuery}"`);
+        enqueue(await searchNaver(browser, fallbackQuery));
+      }
+    }
     const promoted = getTimelessPromotion(keywordData);
-    if (naverPlaces.length === 0 && !promoted) { await browser.close(); return null; }
+    if (queue.length === 0 && !promoted) { await browser.close(); return null; }
 
     // 2-3. Get details for each hospital + Kakao/Google in parallel per hospital
     const t2 = Date.now();
     console.log('[2/6] Getting hospital details (Naver + Kakao + Google parallel)...');
     const hospitals = [];
     const pendingKakaoMatches = []; // {hospitalName, address, phone, placeId, candidates}
-    for (const place of naverPlaces.slice(0, 5)) {
+    for (const place of queue) {
+      if (hospitals.length >= 15) break;
       try {
         await delay(1500);
         console.log(`  ${place.name}...`);
@@ -841,6 +904,11 @@ async function publishOneArticle(keywordData) {
         console.log('  Batch GPT matching failed:', e.message);
       }
     }
+
+    const siblingIds = await siblingTopIds('articles', region, specialty || '일반', category);
+    const picked = pickRecommended(hospitals, specialty || '', siblingIds);
+    hospitals.splice(0, hospitals.length, ...picked);
+    console.log(`  [rank] ${picked.map(h => h.name).join(' / ')}`);
 
     let promotedAdvantages = '';
     if (promoted) {
