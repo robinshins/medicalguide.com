@@ -3,7 +3,7 @@
 // Rendered into the existing `.article-content` styles.
 
 export const SITE_OPERATOR = 'Korea Beauty Guide';
-export const CONTACT_EMAIL = 'medicalguide@gmail.com';
+export const CONTACT_EMAIL = 'nosun3946@gmail.com';
 export const LAST_UPDATED = '2026-03-01';
 export const ESTABLISHED = '2026';
 
