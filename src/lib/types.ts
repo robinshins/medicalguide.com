@@ -1,6 +1,11 @@
 export interface HospitalInfo {
   id: string;
   name: string;
+  /**
+   * 병원이 정정 요청으로 지정한 이 언어판의 공식 표기. 카드 제목과 JSON-LD에만 쓰고,
+   * 카카오맵·구글맵 검색 링크와 제한 병원 필터는 계속 네이버 등록명(name)을 쓴다.
+   */
+  displayName?: string;
   category: string;
   address: string;
   phone: string;

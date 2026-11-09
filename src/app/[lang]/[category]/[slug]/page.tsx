@@ -153,7 +153,7 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     itemListElement: hospitals.map((h: HospitalInfo, i: number) => ({
       '@type': 'ListItem',
       position: i + 1,
-      name: h.name,
+      name: h.displayName || h.name,
       url: h.id ? `https://m.place.naver.com/place/${h.id}` : undefined,
       image: `${baseUrl}/og/rank-${i + 1}.png`,
     })),
@@ -169,7 +169,8 @@ function buildJsonLd(article: NonNullable<Awaited<ReturnType<typeof getArticle>>
     schemas.push({
       '@context': 'https://schema.org',
       '@type': clinicType,
-      name: h.name,
+      name: h.displayName || h.name,
+      alternateName: h.displayName && h.displayName !== h.name ? h.name : undefined,
       url: h.id ? `https://m.place.naver.com/place/${h.id}` : (h.homepage || undefined),
       telephone: h.phone || undefined,
       address: {
@@ -288,7 +289,7 @@ export default async function ArticlePage({ params }: PageProps) {
                   {/* Hospital image */}
                   {hospital.imageUrls && hospital.imageUrls.length > 0 && (
                     <div className="mb-4 rounded-xl overflow-hidden bg-gray-100">
-                      <img src={`/api/img?url=${encodeURIComponent(hospital.imageUrls[0])}&v=2`} alt={hospital.name} className="w-full h-auto rounded-xl" loading="lazy" />
+                      <img src={`/api/img?url=${encodeURIComponent(hospital.imageUrls[0])}&v=2`} alt={hospital.displayName || hospital.name} className="w-full h-auto rounded-xl" loading="lazy" />
                     </div>
                   )}
 
@@ -297,7 +298,7 @@ export default async function ArticlePage({ params }: PageProps) {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1.5">
                         <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-rose-600 text-white text-xs font-bold shrink-0">{i + 1}</span>
-                        <h3 className="font-bold text-lg text-gray-900">{hospital.name}</h3>
+                        <h3 className="font-bold text-lg text-gray-900">{hospital.displayName || hospital.name}</h3>
                       </div>
                       <p className="text-sm text-gray-500 ml-10">{hospital.address}</p>
                     </div>
