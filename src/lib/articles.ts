@@ -76,35 +76,39 @@ export const getArticle = unstable_cache(
 
 // --- Get all articles for sitemap ---
 // Reads one index doc per language (13 reads) instead of full-scanning the articles collection.
-export const getAllArticleSlugs = unstable_cache(
-  async (): Promise<{ lang: string; category: string; slug: string; publishedAt?: string }[]> => {
-    const perLang = await Promise.all(
-      SUPPORTED_LANGUAGES.map(lang => readIndex(lang, 'dermatology').then(items => ({ lang, items })))
+// 사이트맵(api/sitemap/route.ts)은 캐시 없는 loadAllArticleSlugs를 쓴다. unstable_cache·metadata route로
+// 두면 배포 시점 목록에 멈췄다(2026-11-09 배포 이후 새 글이 11/24까지 사이트맵에 없었다).
+export async function loadAllArticleSlugs(): Promise<{ lang: string; category: string; slug: string; publishedAt?: string }[]> {
+  const perLang = await Promise.all(
+    SUPPORTED_LANGUAGES.map(lang => readIndex(lang, 'dermatology').then(items => ({ lang, items })))
+  );
+
+  const anyMissing = perLang.some(r => r.items === null);
+  if (!anyMissing) {
+    return perLang.flatMap(r =>
+      (r.items ?? []).map(a => ({
+        lang: r.lang,
+        category: a.category,
+        slug: a.slug,
+        publishedAt: a.publishedAt,
+      }))
     );
+  }
 
-    const anyMissing = perLang.some(r => r.items === null);
-    if (!anyMissing) {
-      return perLang.flatMap(r =>
-        (r.items ?? []).map(a => ({
-          lang: r.lang,
-          category: a.category,
-          slug: a.slug,
-          publishedAt: a.publishedAt,
-        }))
-      );
-    }
+  // Fallback: at least one language's index is missing — full scan.
+  const snapshot = await db.collection(ARTICLES_COLLECTION)
+    .select('lang', 'category', 'slug', 'publishedAt')
+    .get();
+  return snapshot.docs
+    .map(doc => {
+      const data = doc.data();
+      return { lang: data.lang, category: data.category, slug: data.slug, publishedAt: data.publishedAt };
+    })
+    .filter(a => a.category === 'dermatology');
+}
 
-    // Fallback: at least one language's index is missing — full scan.
-    const snapshot = await db.collection(ARTICLES_COLLECTION)
-      .select('lang', 'category', 'slug', 'publishedAt')
-      .get();
-    return snapshot.docs
-      .map(doc => {
-        const data = doc.data();
-        return { lang: data.lang, category: data.category, slug: data.slug, publishedAt: data.publishedAt };
-      })
-      .filter(a => a.category === 'dermatology');
-  },
+export const getAllArticleSlugs = unstable_cache(
+  loadAllArticleSlugs,
   ['getAllArticleSlugs'],
   { revalidate: CACHE_REVALIDATE, tags: [CACHE_TAG] }
 );
