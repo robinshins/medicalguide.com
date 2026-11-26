@@ -53,15 +53,11 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount), storage
 const db = admin.firestore();
 require('dotenv').config({ path: '.env.local' });
 const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-// DeepSeek는 OpenAI 호환 엔드포인트(번역용). 키가 없으면 SDK가 OPENAI_API_KEY로 조용히
-// 폴백해 원인 모를 401이 나므로 자리표시자를 넣어 DeepSeek 쪽 인증 오류로 드러나게 한다.
-const deepseekClient = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || 'missing-DEEPSEEK_API_KEY',
-  baseURL: 'https://api.deepseek.com', timeout: 10 * 60 * 1000, maxRetries: 0,
-});
-// 번역 모델. 2026-09-24에 gpt-5.4-mini → deepseek-flash(DeepSeek-V4.1-Flash). 자매
-// 사이트들과 같은 선택이며 출력 단가가 1/16. thinking은 끄고 json_object 모드로 받는다.
-const TRANSLATION_MODEL = 'deepseek-flash';
+// 12개 언어 번역 모델. 2026-09-24에 gpt-5.4-mini → deepseek-flash(DeepSeek-V4.1-Flash),
+// 2026-11-26에 deepseek-flash → gpt-6-luna(글 생성과 같은 모델). 바꾼 이유는 비용이다.
+// 공식 단가(100만 토큰당) luna 입력 $0.10·출력 $0.50, deepseek-flash 정가 $0.30·$1.20.
+// 호출은 requestTranslation()이 한다.
+const TRANSLATION_MODEL = 'gpt-6-luna';
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15';
@@ -142,6 +138,31 @@ const GEO_HINTS = {
 
 // 번역 프롬프트 빌더. scratch/테스트에서 이 함수를 직접 require 해 검증하므로,
 // 프롬프트 문자열이 두 곳으로 갈라지지 않는다.
+/**
+ * 번역 1회 호출 → { title, metaDescription, content }. 잘림·상태 오류·파싱 실패는 던진다
+ * (translateWithRetry가 재시도한다). reasoning effort는 'low'다. 2026-11-26 시험에서 'none'은
+ * 영어·베트남어 9번 중 3번 필수 GEO 문구(2회 이상)를 1회만 넣었고, 'low'는 6번 모두 지켰다.
+ * 추론 토큰은 호출당 150개 안팎이라 비용 차이가 거의 없다. max_output_tokens는 OpenAI 분당 토큰 한도 계산에 그대로 들어가고
+ * 12개 언어가 동시에 뜨므로 필요 이상으로 키우지 않는다(언어당 실제 출력은 1만 토큰 안팎).
+ * luna는 temperature를 지원하지 않는다.
+ */
+async function requestTranslation(prompt) {
+  const response = await openaiClient.responses.create({
+    model: TRANSLATION_MODEL,
+    reasoning: { effort: 'low' },
+    text: { format: { type: 'json_object' } },
+    max_output_tokens: 32000,
+    input: [{ role: 'user', content: prompt }],
+  });
+  recordUsage('translate', response.usage);
+  if (response.status === 'incomplete') throw new Error(`Translation incomplete: ${response.incomplete_details?.reason}`);
+  if (response.status && response.status !== 'completed') throw new Error(`Translation status=${response.status}`);
+  const text = response.output_text || '';
+  const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"content"[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Parse failed');
+  return JSON.parse(jsonMatch[0]);
+}
+
 function buildTranslationPrompt({ lang, langName, region, category, koArticle }) {
   const geo = GEO_HINTS[lang];
   const nativeQuery = (geo?.nativeQuery || '').replace(/\{region\}/g, region);
@@ -972,19 +993,7 @@ async function publishOneArticle(keywordData) {
       const prompt = buildTranslationPrompt({ lang, langName, region, category, koArticle });
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const response = await deepseekClient.chat.completions.create({
-            model: TRANSLATION_MODEL,
-            thinking: { type: 'disabled' },
-            response_format: { type: 'json_object' },
-            max_tokens: 64000,
-            messages: [{ role: 'user', content: prompt }],
-          });
-          recordUsage('translate', response.usage);
-          if (response.choices[0].finish_reason === 'length') throw new Error('Translation truncated (finish_reason=length)');
-          const text = response.choices[0].message.content || '';
-          const jsonMatch = text.match(/\{[\s\S]*"title"[\s\S]*"content"[\s\S]*\}/);
-          if (!jsonMatch) throw new Error('Parse failed');
-          const translated = JSON.parse(jsonMatch[0]);
+          const translated = await requestTranslation(prompt);
           const doc = { ...koDoc, id: `${category}-${slug}-${lang}`, lang, title: translated.title, metaDescription: translated.metaDescription, content: translated.content };
           await db.collection('articles').doc(doc.id).set(doc);
           console.log(`  ✓ ${lang}`);
@@ -1129,4 +1138,4 @@ if (require.main === module) {
   main().catch(e => { console.error(e); process.exit(1); });
 }
 
-module.exports = { GEO_HINTS, buildTranslationPrompt };
+module.exports = { GEO_HINTS, buildTranslationPrompt, requestTranslation };

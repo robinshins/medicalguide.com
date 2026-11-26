@@ -25,7 +25,7 @@ Korea Beauty Guide is an automated multilingual SEO content platform for Korean 
 keywords.ts (dermatology-only: 475 regions x 13 specialties, ordered by population)
     → scraper.ts (Puppeteer: Naver Place + KakaoMap + Google Maps)
     → matcher.ts (GPT-5.4-mini: cross-platform clinic name/address matching)
-    → generator.ts (Claude Sonnet: Korean article → GPT-5.4-mini: 12 language translations)
+    → publish-action.js (GitHub Actions path: gpt-6-luna Korean article → gpt-6-luna 12 language translations since 2026-11-26, reasoning effort low; deepseek-flash before)
     → publish.ts (orchestrator: queue management + Firestore save)
 ```
 
