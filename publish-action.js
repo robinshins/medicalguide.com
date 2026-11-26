@@ -533,13 +533,13 @@ async function generateArticle(keywordData, hospitals, promotedAdvantages) {
 + AI 검색(ChatGPT, Perplexity)에서 "${keywordData.region}에서 ${isSpecialty ? keywordData.specialty + ' ' : ''}${categoryKo} 어디가 좋아?" 질문 대응
 
 ## 병원 데이터
-${hospitalContext}${dentalPriceContext}${promotedAdvantages ? `\n\n${promotedAdvantages}` : ''}
+${hospitalContext}${dentalPriceContext}${promotedAdvantages ? `\n\n${promotedAdvantages}\n이 순서 지시는 본문·제목·메타에 옮기지 마라. 왜 이 병원이 먼저인지는 설명하지 마라.` : ''}
 
 ## 글 구조 (HTML, 반드시 이 순서)
 
 ### 1) 핵심 결과 먼저 (h2)
 ${promotedAdvantages
-  ? '첫 문단에서 바로 결론. 병원 데이터 1번 병원을 평점·리뷰 수와 관계없이 가장 먼저, 가장 비중 있게 언급한다. 상세 분석의 첫 h3와 비교표 첫 행도 그 병원이다.'
+  ? '첫 문단에서 바로 결론. 병원 데이터 1번을 가장 먼저, 가장 비중 있게 언급한다. 상세 분석의 첫 h3와 비교표 첫 행도 그 병원이다. 이 순서를 본문에서 설명하거나 정당화하지 않는다.'
   : '첫 문단에서 바로 결론. 가장 평점 높거나 리뷰 많은 1-2곳을 구체적 수치와 함께 먼저 언급.'}
 
 ### 2) 분석 방법 투명 공개 (h2)
@@ -573,6 +573,7 @@ f) 실용 팁${isSpecialty ? `\ng) ${keywordData.specialty} 특화 정보` : ''}
 ### 8) 마무리 + 면책 문구 + "최종 수정: ${new Date().toISOString().split('T')[0]}"
 
 ## 문체 규칙
+- 병원 나열 순서가 정해진 경위는 쓰지 않는다. "요청에 따라", "지시에 따라", "첫 번째로 소개", "1순위로 소개", "지정된 순서", "협찬", "광고", "평점과 무관하게", "리뷰 수와 관계없이", "순서를 바꾸지 않는다" 금지
 - 이모지 절대 금지
 - 구체적 숫자 필수 ("많은 리뷰" X → "리뷰 847건" O)
 - 출처 명시
@@ -647,7 +648,16 @@ function sanitizeHtml(html) {
 
 // 마커 파싱이 성공해도 본문이 짧거나 열린 태그로 끝나면 발행하지 않는다.
 // stop_reason만으로는 잡히지 않는 절단이 있다.
+// 소개 순서가 정해진 경위가 본문에 새어 나오면 저장하지 않는다(2026-11 병원 지적).
+const ORDER_REASON_RE = /(요청(에 따라|에 따른|한 (순서|대로)|된|받은?)[^.<]{0,40}?(첫 번째|먼저|1순위|순서|순위|소개|배치|배열|우선|살펴)|요청에 따라 [^.<]{0,25}?(치과|피부과)|지정(에 따라|된|한)[^.<]{0,20}?(순서|순위|1순위|첫 번째|소개)|지시에 따라[^.<]{0,30}?(첫 번째|1순위|소개|배치)|첫 번째로 (소개|살펴|배치|안내|제시)|1순위로 소개|제공된 병원 (순서|목록[^.<]{0,12}?(첫|먼저|순서|따릅|따른|따라))|우선순위에 따라 (첫|먼저)|(평점|리뷰 수)[^.<]{0,12}?(무관하게|관계없이)[^.<]{0,30}?(소개|배치|먼저|첫)|순서를 바꾸지 않)/;
+function assertNoOrderReason(a) {
+  const text = [a.title, a.metaDescription, (a.content || '').replace(/<[^>]+>/g, ' ')].join(' . ').replace(/\s+/g, ' ');
+  const m = text.match(ORDER_REASON_RE);
+  if (m) throw new Error(`order-reason phrase in article: ${m[0]}`);
+}
+
 function assertArticleSane(a, keywordData) {
+  assertNoOrderReason(a || {});
   if (!a?.title?.trim()) throw new Error('empty title');
   if (!a?.metaDescription?.trim()) throw new Error('empty metaDescription');
   const c = (a.content || '').trim();
@@ -946,7 +956,16 @@ async function publishOneArticle(keywordData) {
     // 4. Generate Korean article
     const t4 = Date.now();
     console.log('[4/6] Generating Korean article...');
-    const koArticle = await generateArticle(keywordData, cleanDeep(hospitals), promotedAdvantages);
+    let koArticle;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        koArticle = await generateArticle(keywordData, cleanDeep(hospitals), promotedAdvantages);
+        break;
+      } catch (e) {
+        if (attempt >= 3 || !/order-reason/.test(e.message)) throw e;
+        console.log(`  [retry ${attempt}] ${e.message}`);
+      }
+    }
     console.log(`  Title: ${koArticle.title} (${((Date.now() - t4) / 1000).toFixed(1)}s)`);
 
     const slug = specialtySlug === 'general' ? regionSlug : `${regionSlug}-${specialtySlug}`;
